@@ -10,6 +10,7 @@ profiles:
       - Arduino_LSM6DSOX (1.1.2)
       - Arduino_LPS22HB (1.0.2)
       - Arduino_HS300x (1.0.0)
+      - ArduinoGraphics (1.1.5)
       - Arduino_LTR381RGB (1.0.1)
 
 default_profile: default

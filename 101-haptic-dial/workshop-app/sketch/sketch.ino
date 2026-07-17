@@ -40,9 +40,8 @@ void show_level(int level) {
 
 void pulse_vibro(int level) {
   level = constrain(level, 0, 100);
-  int duration = map(level, 0, 100, 80, 350);
-  int power = map(level, 0, 100, GENTLE, MAXIMUM);
-  vibro.on(duration, false, power);
+  int duration = map(level, 0, 100, 180, 400);
+  vibro.on(duration);
 }
 
 void setup() {
@@ -50,6 +49,9 @@ void setup() {
   knob.begin();
   pixels.begin();
   vibro.begin();
+
+  // A startup pulse confirms the Vibro is connected before Bridge starts.
+  vibro.on(250);
 
   knob.set(0);
   show_level(0);

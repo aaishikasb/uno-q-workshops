@@ -16,7 +16,7 @@ The demo is intentionally small:
 ## Session Pre-requisites
 
 1. Install [Arduino App Lab](https://www.arduino.cc/en/software/#app-lab-section).
-2. Clone this repository using `git clone https://github.com/aaishikasb/uno-q-workshop-1.git` in your terminal.
+2. Clone this repository using `git clone https://github.com/aaishikasb/uno-q-workshops.git` in your terminal.
 
 ## Hardware Setup (Provided On-site)
 
@@ -53,7 +53,7 @@ After connecting all the Modulinos, connect the UNO Q to your computer with USB-
 3. If the `Updates` modal pops up, **DO NOT** proceed with updating board firmware.
 4. Open **My Apps**.
 5. Import or upload the `.zip` file in this repository.
-6. Open the imported `workshop-app.zip` file in App Lab.
+6. Open the imported `UNO Q Haptic Dial` app in App Lab.
 7. Confirm the files are present:
    - `app.yaml`
    - `python/main.py`
@@ -62,6 +62,7 @@ After connecting all the Modulinos, connect the UNO Q to your computer with USB-
 8. Click `Run` on the top-right corner.
 
 App Lab should compile and flash the MCU sketch, then start the Python runtime on the UNO Q Linux side.
+The Vibro should pulse once during startup. Press the knob for another pulse; turning it changes the pulse duration.
 
 ## How The Demo Works
 
