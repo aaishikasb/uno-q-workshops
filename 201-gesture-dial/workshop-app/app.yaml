@@ -1,0 +1,2 @@
+name: UNO Q Gesture Dial
+description: Train a local gesture classifier with a Modulino Knob, then express predictions with Pixels and Vibro.
