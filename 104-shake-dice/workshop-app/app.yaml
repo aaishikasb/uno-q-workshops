@@ -1,0 +1,2 @@
+name: UNO Q Shake Dice
+description: Shake the board to roll a virtual die. IMU acceleration determines the result, Pixels show the die face, Buzzer plays a fanfare, and Vibro pulses once per pip.
