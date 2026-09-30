@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "01M3RE5CJFNCN8SK988Z2KA089",
+  "session_id": "01a0f0d2-8b1a-7202-a6c6-0fc8e977d887",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-30T05:56:24.57642Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "202-anomaly-dial/README.md",
+    "202-anomaly-dial/test_anomaly_dial.py",
+    "202-anomaly-dial/workshop-app.zip",
+    "202-anomaly-dial/workshop-app/app.yaml",
+    "202-anomaly-dial/workshop-app/python/anomaly_model.py",
+    "202-anomaly-dial/workshop-app/python/main.py",
+    "202-anomaly-dial/workshop-app/sketch/sketch.ino",
+    "202-anomaly-dial/workshop-app/sketch/sketch.yaml",
+    "README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6-astra",
+  "turn_id": "ab30cd1ee662",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 59559,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 772096,
+    "output_tokens": 18489,
+    "api_call_count": 14
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-30T05:56:24.528282Z",
+    "agent_lines": 815,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 10,
+    "human_removed": 0,
+    "total_committed": 825,
+    "total_lines_changed": 825,
+    "agent_percentage": 98.7878787878788,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 88,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".codex/hooks.json": 88
+      }
+    }
+  ]
+}

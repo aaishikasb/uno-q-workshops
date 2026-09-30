@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "01M3RE5CJFNCN8SK988Z2KA089",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "202-anomaly-dial/README.md",
+    "202-anomaly-dial/test_anomaly_dial.py",
+    "202-anomaly-dial/workshop-app.zip",
+    "202-anomaly-dial/workshop-app/app.yaml",
+    "202-anomaly-dial/workshop-app/python/anomaly_model.py",
+    "202-anomaly-dial/workshop-app/python/main.py",
+    "202-anomaly-dial/workshop-app/sketch/sketch.ino",
+    "202-anomaly-dial/workshop-app/sketch/sketch.yaml",
+    "README.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 59559,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 772096,
+    "output_tokens": 18489,
+    "api_call_count": 14
+  }
+}
