@@ -1,94 +1,92 @@
-# 104: Shake Dice
+# QC UNO Q Workshop 104: Shake Dice
 
 Build a physical die that rolls itself. Shake the Arduino UNO Q and the IMU Z-axis detects the impact — acceleration peak and shake duration combine to produce a result. Pixels display the die face, the Buzzer plays a fanfare, and the Vibro pulses once per pip. You will learn how IMU acceleration sampling works, how to detect gesture onset and release using a threshold state machine, and how to derive a varied-but-deterministic result from physical input.
 
-## Prerequisites
+## Session Prerequisites
 
-- Completed [101: Haptic Dial](../101-haptic-dial/README.md)
-- Arduino App Lab installed and connected to your UNO Q board
+1. Install [Arduino App Lab](https://www.arduino.cc/en/software/#app-lab-section).
+2. Clone this repository using `git clone https://github.com/aaishikasb/uno-q-workshops.git` in your terminal.
 
-## Hardware Setup
+## Hardware Setup (Provided On-site)
 
-Connect the following Modulinos to your Arduino UNO Q using Qwiic cables, daisy-chained in any order:
+### Required Hardware
 
+- Arduino UNO Q
+- Modulino Movement (LSM6DSOX)
+- Modulino Pixels
+- Modulino Buzzer
+- Modulino Vibro
+- Modulino Buttons
+- 5 Qwiic cables
+- USB-C cable
+
+### Wiring
+
+Chain the Modulinos with Qwiic in this order:
+
+```text
+UNO Q Qwiic -> Modulino Movement -> Modulino Pixels -> Modulino Buzzer -> Modulino Vibro -> Modulino Buttons
 ```
-UNO Q
-  └── Modulino Movement  (LSM6DSOX IMU — accelerometer + gyroscope)
-  └── Modulino Pixels    (8 RGB LEDs)
-  └── Modulino Buzzer    (piezo buzzer)
-  └── Modulino Vibro     (haptic motor)
-  └── Modulino Buttons   (A / B / C buttons)
-```
+
+> [!NOTE]
+> Modulinos on UNO Q can behave differently depending on the order they are connected. Use the chain above to match the tested configuration.
 
 Hold the board flat in your palm during a roll so the Z-axis (perpendicular to the board surface) takes the full impact of the shake.
 
+After connecting all the Modulinos, connect the UNO Q to your computer with USB-C.
+
 ## App Lab Setup
 
-1. Open **Arduino App Lab** in your browser and connect to your UNO Q board.
-2. Click **Import** and select `workshop-app.zip` from this folder.
-3. Click **Run**. App Lab will compile the sketch, flash the MCU, and start the Python app.
-4. A short haptic pulse on startup confirms the hardware is ready.
+1. Open Arduino App Lab.
+2. Select your UNO Q board.
+3. If the `Updates` modal pops up, **DO NOT** proceed with updating board firmware.
+4. Open **My Apps**.
+5. Import or upload the `.zip` file in this repository.
+6. Open the imported `UNO Q Shake Dice` app in App Lab.
+7. Confirm the files are present:
+   - `app.yaml`
+   - `python/main.py`
+   - `sketch/sketch.ino`
+   - `sketch/sketch.yaml`
+8. Click `Run` on the top-right corner.
 
-## How It Works
+App Lab will compile and flash the MCU sketch, then start the Python runtime on the UNO Q Linux side. A short haptic pulse on startup confirms the hardware is ready.
 
+## How The Demo Works
+
+```mermaid
+flowchart LR
+    I["Modulino Movement\n(IMU Z-axis, 50 Hz)"] --> M["MCU: cache az"]
+    B["Modulino Buttons\n(A = re-roll, B = d6/d8)"] --> M
+    M <-->|"Bridge RPC"| P["Linux: Python loop"]
+    P --> S{"Shake threshold\nstate machine"}
+    S -->|"az >= 2.0 g"| R["Record peak + duration"]
+    R -->|"az < 2.0 g\n>= 80 ms elapsed"| D["derive_result()"]
+    D --> A["animate_roll()"]
+    A -->|"show_face(value, sides)"| M
+    A -->|"play_fanfare()"| M
+    A -->|"pip_pulse() × value"| M
+    M --> X["Modulino Pixels"]
+    M --> BZ["Modulino Buzzer"]
+    M --> V["Modulino Vibro"]
 ```
-Shake the board
-      │
-      ▼
-[MCU: read_az() — IMU Z-axis via Bridge handler]
-      │
-      ▼
-[Python: threshold state machine]
-  az_g >= 2.0 g? ──yes──> record shake_start, track peak_az
-  az_g  < 2.0 g? ──yes──> if duration >= 80 ms: valid shake
-                                │
-                                ▼
-                     derive_result(peak_az, duration_ms, sides)
-                     = (peak_int + duration_ms) % sides + 1
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-             animate_roll()           reveal(value, sides)
-          (12 frames, 60 ms each)           │
-                                    ┌───────┴───────┐
-                                    │               │
-                             show_face()      play_fanfare()
-                             show_rolling()   pip_pulse() × value
-                                    │
-                               MCU updates
-                             Pixels + Buzzer + Vibro
-```
 
-**Shake detection**: Python reads the IMU Z-axis via Bridge at 50 Hz. When acceleration exceeds 2.0 g, the shake timer starts. When it drops back below threshold and at least 80 ms have elapsed, the roll is confirmed. Peak and duration are recorded throughout.
-
-**Result derivation**: `(peak_az_int + shake_duration_ms) % sides + 1`. Neither value alone is uniform — their sum spreads results across the face range more evenly across different shake styles.
-
-**Die faces (d6)**: Pixels 0–7 are arranged as two rows of four. Each d6 face uses a bitmask matching standard pip positions. d8 uses a left-to-right bar fill (1–8 pixels).
-
-**Controls**:
-- **Button A**: re-roll without shaking — uses stored peak scaled by current time.
-- **Button B**: toggle between d6 and d8 mode (gold pixels vs. blue pixels).
+- The MCU samples the IMU Z-axis at 50 Hz and exposes `read_az()` over Bridge.
+- Python detects when acceleration exceeds 2.0 g (shake start) and drops back below it (shake end), requiring at least 80 ms to confirm a valid roll.
+- Result: `(peak_az_int + shake_duration_ms) % sides + 1` — spreading results across the face range across different shake styles.
+- Button A re-rolls without shaking; Button B toggles between d6 and d8 mode.
 
 ## Files
 
-```
-104-shake-dice/
-├── README.md
-├── workshop-app.zip
-└── workshop-app/
-    ├── app.yaml
-    ├── python/
-    │   └── main.py          Shake detection, result derivation, animation sequencing
-    └── sketch/
-        ├── sketch.ino       IMU read, Pixel face patterns, Buzzer fanfare, Vibro pip pulse
-        └── sketch.yaml      Arduino build configuration
-```
+- `workshop-app/`: App Lab project source
+- `workshop-app/python/main.py`: shake detection, result derivation, and animation sequencing
+- `workshop-app/sketch/sketch.ino`: IMU read, Pixel face patterns, Buzzer fanfare, and Vibro pip pulse
+- `workshop-app.zip`: importable App Lab file
 
 ## Sources
 
-- [Modulino Movement (LSM6DSOX) documentation](https://docs.arduino.cc/hardware/modulino-movement/)
-- [Modulino Pixels documentation](https://docs.arduino.cc/hardware/modulino-pixels/)
-- [Modulino Buzzer documentation](https://docs.arduino.cc/hardware/modulino-buzzer/)
-- [Modulino Vibro documentation](https://docs.arduino.cc/hardware/modulino-vibro/)
-- [Modulino Buttons documentation](https://docs.arduino.cc/hardware/modulino-buttons/)
-- [Arduino UNO Q documentation](https://docs.arduino.cc/hardware/uno-q/)
+- Arduino UNO Q hardware docs: https://docs.arduino.cc/hardware/uno-q
+- Arduino Bridge guide: https://docs.arduino.cc/software/app-lab/bridge/get-started-with-bridge
+- Arduino Bridge API: https://docs.arduino.cc/software/app-lab/bridge/bridge-api
+- Arduino App structure: https://docs.arduino.cc/software/app-lab/apps/about-apps
+- Arduino Modulino library: https://docs.arduino.cc/libraries/arduino_modulino
