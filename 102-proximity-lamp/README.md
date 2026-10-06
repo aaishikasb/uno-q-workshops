@@ -1,4 +1,4 @@
-# 105: Proximity Lamp
+# QC UNO Q Workshop 102: Proximity Lamp
 
 Build a configurable proximity alert lamp using a Time-of-Flight distance sensor. As an object moves
 closer, the Pixel LEDs light up in a color gradient from green to red and a Vibro haptic pulse fires
@@ -6,62 +6,73 @@ the moment the object crosses your chosen alert threshold. You will learn how To
 to map a continuous sensor range to a visual display, and how to detect threshold crossings using
 edge detection rather than polling.
 
-## Prerequisites
+## Session Prerequisites
 
-- Completed [101: Haptic Dial](../101-haptic-dial/README.md)
-- Arduino App Lab installed and connected to your UNO Q board
+1. Install [Arduino App Lab](https://www.arduino.cc/en/software/#app-lab-section).
+2. Clone this repository using `git clone https://github.com/aaishikasb/uno-q-workshops.git` in your terminal.
 
-## Hardware Setup
+## Hardware Setup (Provided On-site)
 
-Connect the following Modulinos to your Arduino UNO Q using Qwiic cables, daisy-chained in any order:
+### Required Hardware
 
+- Arduino UNO Q
+- Modulino Distance (VL53L4CD)
+- Modulino Pixels
+- Modulino Vibro
+- Modulino Knob
+- 4 Qwiic cables
+- USB-C cable
+
+### Wiring
+
+Chain the Modulinos with Qwiic in this order:
+
+```text
+UNO Q Qwiic -> Modulino Distance -> Modulino Pixels -> Modulino Vibro -> Modulino Knob
 ```
-UNO Q
-  └── Modulino Distance   (VL53L4CD ToF sensor — point the sensor window outward)
-  └── Modulino Pixels     (8 RGB LEDs)
-  └── Modulino Vibro      (haptic motor)
-  └── Modulino Knob       (rotary encoder)
-```
 
-Point the Distance sensor window toward open space — it needs a clear line of sight to measure
-correctly. Avoid pointing it at a mirror or highly reflective surface during setup.
+> [!NOTE]
+> Modulinos on UNO Q can behave differently depending on the order they are connected. Use the chain above to match the tested configuration.
+
+Point the Distance sensor window toward open space — it needs a clear line of sight to measure correctly.
+
+After connecting all the Modulinos, connect the UNO Q to your computer with USB-C.
 
 ## App Lab Setup
 
-1. Open **Arduino App Lab** in your browser and connect to your UNO Q board.
-2. Click **Import** and select `workshop-app.zip` from this folder.
-3. Click **Run**. App Lab will compile the sketch, flash the MCU, and start the Python app.
-4. Watch the console — you should see `Ready.` and a startup haptic pulse within a few seconds.
+1. Open Arduino App Lab.
+2. Select your UNO Q board.
+3. If the `Updates` modal pops up, **DO NOT** proceed with updating board firmware.
+4. Open **My Apps**.
+5. Import or upload the `.zip` file in this repository.
+6. Open the imported `UNO Q Proximity Lamp` app in App Lab.
+7. Confirm the files are present:
+   - `app.yaml`
+   - `python/main.py`
+   - `sketch/sketch.ino`
+   - `sketch/sketch.yaml`
+8. Click `Run` on the top-right corner.
 
-## How It Works
+App Lab will compile and flash the MCU sketch, then start the Python runtime on the UNO Q Linux side. The Vibro pulses once during startup.
 
+## How The Demo Works
+
+```mermaid
+flowchart LR
+    D["Modulino Distance\n(ToF, 20 Hz)"] --> M["MCU: cache latestDistance"]
+    K["Modulino Knob"] --> M
+    M <-->|"Bridge RPC"| P["Linux: Python loop"]
+    P -->|"show_distance(color, count, alert)"| M
+    P -->|"pulse_alert(strength)"| M
+    M --> X["Modulino Pixels"]
+    M --> V["Modulino Vibro"]
 ```
-Modulino Distance          Modulino Knob
-  (ToF, 20 Hz poll)        (threshold setting)
-       |                          |
-       v                          v
-  MCU loop()             read_knob() via Bridge
-  latestDistance  ──────────────────────────────> Python loop()
-                                                        |
-                                          ┌─────────────┴──────────────┐
-                                          |                            |
-                                   map distance                  knob → threshold
-                                   → color code                  50–500 mm
-                                   → lit count (0–7)
-                                          |
-                                          v
-                              detect alert zone crossing
-                              (edge: was outside, now inside)
-                                          |
-                              ┌───────────┴──────────┐
-                              |                      |
-                       show_distance()          pulse_alert()
-                       (color, count,           (haptic, once
-                        alert pixel 7)           on entry only)
-                              |
-                         MCU updates
-                         Pixels + Vibro
-```
+
+- The MCU polls the Distance sensor at 20 Hz in `loop()` and caches the latest reading.
+- The MCU exposes `read_distance()` and `read_knob()` over Bridge.
+- Python reads distance every 50 ms, maps it to a color code and pixel count, and calls `show_distance()`.
+- Python maps the knob position to an alert threshold (50–500 mm) and detects when the object crosses into the alert zone.
+- The haptic fires once on the `outside → inside` transition — not continuously while inside.
 
 **Distance bands:**
 
@@ -72,38 +83,17 @@ Modulino Distance          Modulino Knob
 | 150–300 mm | Orange | Close |
 | < 150 mm | Red | Very close |
 
-**Pixel layout:**
-- Pixels 0–6 fill left to right as the object gets closer (7 = closest, 0 = farthest detected).
-- Pixel 7 lights white independently when the object is inside the alert zone.
-
-**Alert edge detection:**
-Python tracks `in_alert_zone` state. The haptic only fires on the `False → True` transition —
-not continuously while the object is inside the zone. This is why you get one pulse when your
-hand enters the zone, not a continuous buzz.
-
-**Knob:**
-Turning the Knob adjusts the alert threshold from 50 mm (full left) to 500 mm (full right).
-The current threshold prints to console on every change.
-
 ## Files
 
-```
-105-proximity-lamp/
-├── README.md
-├── workshop-app.zip
-└── workshop-app/
-    ├── app.yaml
-    ├── python/
-    │   └── main.py          Distance reading, threshold logic, edge detection
-    └── sketch/
-        ├── sketch.ino       ToF polling loop, Pixel gradient, Vibro pulse
-        └── sketch.yaml      Arduino build configuration
-```
+- `workshop-app/`: App Lab project source
+- `workshop-app/python/main.py`: distance reading, threshold logic, and edge detection
+- `workshop-app/sketch/sketch.ino`: ToF polling loop, Pixel gradient, and Vibro pulse
+- `workshop-app.zip`: importable App Lab file
 
 ## Sources
 
-- [Modulino Distance (VL53L4CD) documentation](https://docs.arduino.cc/hardware/modulino-distance/)
-- [Modulino Pixels documentation](https://docs.arduino.cc/hardware/modulino-pixels/)
-- [Modulino Vibro documentation](https://docs.arduino.cc/hardware/modulino-vibro/)
-- [Modulino Knob documentation](https://docs.arduino.cc/hardware/modulino-knob/)
-- [Arduino UNO Q documentation](https://docs.arduino.cc/hardware/uno-q/)
+- Arduino UNO Q hardware docs: https://docs.arduino.cc/hardware/uno-q
+- Arduino Bridge guide: https://docs.arduino.cc/software/app-lab/bridge/get-started-with-bridge
+- Arduino Bridge API: https://docs.arduino.cc/software/app-lab/bridge/bridge-api
+- Arduino App structure: https://docs.arduino.cc/software/app-lab/apps/about-apps
+- Arduino Modulino library: https://docs.arduino.cc/libraries/arduino_modulino
