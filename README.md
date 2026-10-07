@@ -7,6 +7,7 @@ This monorepo contains workshop materials for building projects with the Arduino
 | Workshop | Description | Hardware | Materials |
 | --- | --- | --- | --- |
 | `101: Haptic Dial` | Build a physical dial that controls LEDs and haptic feedback across the UNO Q's MCU and Linux MPU. | UNO Q, Modulino Knob, Pixels, and Vibro | [View content](./101-haptic-dial/) |
+| `102: Proximity Lamp` | Build a proximity lamp with distance-based LED colors and haptic alerts at a knob-adjustable threshold. | UNO Q, Modulino Distance, Knob, Pixels, and Vibro | [View content](./102-proximity-lamp/) |
 | `104: Safe Cracker` | Crack a seven-stage safe with the dial, guided by haptic ticks and Pixel progress. | UNO Q, Modulino Knob, Pixels, and Vibro | [View content](./104-safe-cracker/) |
 | `201: Gesture Dial` | Train a personal edge-AI dial that recognizes rotation gestures and expresses prediction confidence. | UNO Q, Modulino Knob, Pixels, and Vibro | [View content](./201-gesture-dial/) |
 | `202: Anomaly Dial` | Learn normal dial movement locally and flag unusual speed, duration, or direction changes. | UNO Q, Modulino Knob, Pixels, and Vibro | [View content](./202-anomaly-dial/) |
