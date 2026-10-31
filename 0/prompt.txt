@@ -15,3 +15,7 @@ Let's add all three of those as individual 20x apps. Follow the direction/format
 ---
 
 Can you review all three new apps for bugs and make sure their READMEs match the actual behavior? Fix anything you find.
+
+---
+
+Can you commit all three apps serparately following the naming convention we already have and then push directly to main?
