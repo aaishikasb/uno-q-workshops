@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "01M68DQ4477H7VSP7SA5SBX4AG",
+  "session_id": "01a13855-ff5f-7dd3-afb1-999c88387853",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-31T07:27:51.47725Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "204-pocket-pet/README.md",
+    "204-pocket-pet/test_pocket_pet.py",
+    "204-pocket-pet/test_sketch.py",
+    "204-pocket-pet/workshop-app/python/main.py",
+    "AGENTS.md",
+    "README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6-astra",
+  "turn_id": "ca9e7929b20d",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 300460,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5497728,
+    "output_tokens": 70219,
+    "api_call_count": 46
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-31T07:27:51.413952Z",
+    "agent_lines": 615,
+    "agent_removed": 0,
+    "human_added": 230,
+    "human_modified": 10,
+    "human_removed": 0,
+    "total_committed": 855,
+    "total_lines_changed": 855,
+    "agent_percentage": 71.9298245614035,
+    "metric_version": 2
+  }
+}

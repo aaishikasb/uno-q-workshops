@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "01M68DQ4477H7VSP7SA5SBX4AG",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "204-pocket-pet/README.md",
+    "204-pocket-pet/test_pocket_pet.py",
+    "204-pocket-pet/test_sketch.py",
+    "204-pocket-pet/workshop-app/python/main.py",
+    "AGENTS.md",
+    "README.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 300460,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5497728,
+    "output_tokens": 70219,
+    "api_call_count": 46
+  }
+}

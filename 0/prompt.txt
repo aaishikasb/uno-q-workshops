@@ -1,0 +1,21 @@
+Can you recommend more 20x workshop ideas that aren't focused around dials? I love gesture dial because attendees train their own model but all the workshops being named dial is awkward.
+
+---
+
+Without any component additions, what can we do?
+
+---
+
+We have Knob, Pixels and Vibro only
+
+---
+
+Let's add all three of those as individual 20x apps. Follow the direction/format of the pre existing 20x apps specially the respective READMEs
+
+---
+
+Can you review all three new apps for bugs and make sure their READMEs match the actual behavior? Fix anything you find.
+
+---
+
+Can you commit all three apps serparately following the naming convention we already have and then push directly to main?
