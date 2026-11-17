@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UNO Q AI Maze</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #111418; color: #e8eaed; margin: 0; padding: 16px; }
+  h1 { font-size: 1.3rem; margin: 0 0 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 16px; }
+  .card { background: #1c2128; border-radius: 10px; padding: 12px; flex: 1 1 320px; }
+  .card h2 { font-size: 0.95rem; margin: 0 0 8px; color: #9aa4b2; font-weight: 600; }
+  canvas { width: 100%; height: auto; display: block; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; background: #2d6cdf; font-weight: 600; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 8px 0 16px; }
+  .stat { background: #1c2128; border-radius: 8px; padding: 8px; }
+  .stat b { display: block; font-size: 1.3rem; }
+  .stat span { color: #9aa4b2; font-size: 0.8rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 1.1rem; }
+  td { padding: 6px 4px; border-bottom: 1px solid #2a313a; }
+  td:last-child { text-align: right; font-weight: 700; }
+  #status { color: #9aa4b2; font-size: 0.85rem; }
+  .wide { flex-basis: 100%; }
+  canvas.view { height: 400px; border-radius: 8px; }
+  #tiltText { color: #9aa4b2; font-size: 0.85rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<h1>AI Maze &nbsp;<span class="badge" id="mode">connecting</span></h1>
+<div id="status">Waiting for the board...</div>
+<div class="stats">
+  <div class="stat"><b id="episodes">0</b><span>episodes</span></div>
+  <div class="stat"><b id="rate">0%</b><span>success (last 20)</span></div>
+  <div class="stat"><b id="eps">0.20</b><span>epsilon</span></div>
+  <div class="stat"><b id="speed">0</b><span>speed</span></div>
+  <div class="stat"><b id="knob">speed</b><span>knob controls</span></div>
+</div>
+<div class="row">
+  <div class="card wide">
+    <h2>Live board: tilts with the Modulino Movement &nbsp;<span id="tiltText"></span></h2>
+    <canvas class="view" id="view"></canvas>
+  </div>
+  <div class="card">
+    <h2>What the agent thinks each cell is worth (best Q-value)</h2>
+    <canvas id="heatmap" width="520" height="320"></canvas>
+  </div>
+  <div class="card">
+    <h2>Reward per episode (last 200)</h2>
+    <canvas id="chart" width="520" height="320"></canvas>
+  </div>
+  <div class="card">
+    <h2>Human vs AI</h2>
+    <table>
+      <tr><td>Human moves</td><td id="human">-</td></tr>
+      <tr><td>Human time</td><td id="humanTime">-</td></tr>
+      <tr><td>AI moves</td><td id="ai">-</td></tr>
+      <tr><td>Best possible</td><td id="optimal">-</td></tr>
+    </table>
+  </div>
+</div>
+<script>
+const WALL = 1, GOAL = 2, TRAP = 3;
+const heat = document.getElementById("heatmap").getContext("2d");
+const chart = document.getElementById("chart").getContext("2d");
+
+function color(t) {
+  const r = Math.round(30 + 225 * t), g = Math.round(60 + 160 * t), b = Math.round(160 - 120 * t);
+  return `rgb(${r},${g},${b})`;
+}
+
+function drawHeatmap(s) {
+  const w = heat.canvas.width, h = heat.canvas.height, size = Math.min(w / s.cols, h / s.rows);
+  heat.clearRect(0, 0, w, h);
+  const open = s.values.filter((_, i) => s.cells[i] !== WALL);
+  const lo = Math.min(...open, 0), hi = Math.max(...open, 0.0001);
+  s.cells.forEach((cell, i) => {
+    const x = (i % s.cols) * size, y = Math.floor(i / s.cols) * size;
+    heat.fillStyle = cell === WALL ? "#4a4f57" : color((s.values[i] - lo) / (hi - lo || 1));
+    heat.fillRect(x + 1, y + 1, size - 2, size - 2);
+    if (cell === GOAL || cell === TRAP || i === s.start) {
+      heat.fillStyle = "#000";
+      heat.font = `bold ${size * 0.5}px system-ui`;
+      heat.textAlign = "center";
+      heat.textBaseline = "middle";
+      heat.fillText(cell === GOAL ? "G" :cell === TRAP ? "X" : "S", x + size / 2, y + size / 2);
+    }
+    if (i === s.ball) {
+      heat.strokeStyle = "#fff";
+      heat.lineWidth = 3;
+      heat.beginPath();
+      heat.arc(x + size / 2, y + size / 2, size * 0.36, 0, Math.PI * 2);
+      heat.stroke();
+    }
+  });
+}
+
+function drawChart(rewards) {
+  const w = chart.canvas.width, h = chart.canvas.height, pad = 28;
+  chart.clearRect(0, 0, w, h);
+  chart.strokeStyle = "#2a313a";
+  chart.strokeRect(pad, 4, w - pad - 4, h - pad - 4);
+  if (rewards.length < 2) return;
+  const lo = Math.min(...rewards), hi = Math.max(...rewards, lo + 1);
+  const y = v => 4 + (h - pad - 4) * (1 - (v - lo) / (hi - lo));
+  const x = i => pad + (w - pad - 4) * i / (rewards.length - 1);
+  chart.fillStyle = "#9aa4b2";
+  chart.font = "11px system-ui";
+  chart.fillText(hi.toFixed(0), 2, 14);
+  chart.fillText(lo.toFixed(0), 2, h - pad);
+  chart.strokeStyle = "#5b6b80";
+  chart.lineWidth = 1;
+  chart.beginPath();
+  rewards.forEach((v, i) => i ? chart.lineTo(x(i), y(v)) : chart.moveTo(x(i), y(v)));
+  chart.stroke();
+  chart.strokeStyle = "#f6c343";
+  chart.lineWidth = 2.5;
+  chart.beginPath();
+  rewards.forEach((_, i) => {
+    const window = rewards.slice(Math.max(0, i - 19), i + 1);
+    const avg = window.reduce((a, b) => a + b, 0) / window.length;
+    i ? chart.lineTo(x(i), y(avg)) : chart.moveTo(x(i), y(avg));
+  });
+  chart.stroke();
+}
+
+function text(id, value) { document.getElementById(id).textContent = value; }
+
+async function refresh() {
+  try {
+    const response = await fetch("/api/state", { cache: "no-store" });
+    const s = await response.json();
+    text("mode", s.mode);
+    text("status", "Live from the board. Yellow line = 20-episode average.");
+    text("episodes", s.episodes);
+    text("rate", Math.round(s.success_rate * 100) + "%");
+    text("eps", s.epsilon.toFixed(2));
+    text("speed", s.speed);
+    text("knob", s.knob_target);
+    text("human", s.human_moves ?? "-");
+    text("humanTime", s.human_seconds != null ? s.human_seconds + " s" : "-");
+    text("ai", s.ai_moves ?? "-");
+    text("optimal", s.optimal_moves ?? "-");
+    if (s.cells.length) {
+      const key = s.cells.join("") + ":" + s.start;
+      if (key !== layout) { layout = key; buildBoard(s); }
+      drawHeatmap(s);
+    }
+    drawChart(s.rewards);
+  } catch (error) {
+    text("status", "Board not reachable: " + error.message);
+  }
+}
+
+// 3D board: a tiny flat-shaded polygon renderer on a 2D canvas, so it works offline on any phone.
+const DEG = Math.PI / 180;
+const ELEVATION = 56 * DEG;
+const CAMERA_DISTANCE = 24;
+const WALL_HEIGHT = 0.6;
+const LIGHT = normalize([-0.4, -0.5, 0.8]);
+const FLOOR = [70, 110, 122], WALL_COLOR = [150, 170, 185], EDGE = [90, 110, 125];
+const GOAL_COLOR = [60, 200, 100], TRAP_COLOR = [190, 40, 40], START_COLOR = [100, 140, 152];
+const view = document.getElementById("view");
+const g = view.getContext("2d");
+let layout = "", cols = 13, rows = 8, faces = [];
+const target = { right: 0, down: 0, ball: null };
+const shown = { right: 0, down: 0, x: null, y: null };
+
+function normalize(v) { const l = Math.hypot(...v); return v.map(c => c / l); }
+function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+
+function quad(color, x0, y0, x1, y1, z) {
+  faces.push({ color, normal: [0, 0, 1], points: [[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]] });
+}
+
+function box(color, x0, y0, x1, y1, z1) {
+  quad(color, x0, y0, x1, y1, z1);
+  faces.push({ color, normal: [0, 1, 0], points: [[x0, y1, 0], [x1, y1, 0], [x1, y1, z1], [x0, y1, z1]] });
+  faces.push({ color, normal: [0, -1, 0], points: [[x0, y0, 0], [x1, y0, 0], [x1, y0, z1], [x0, y0, z1]] });
+  faces.push({ color, normal: [1, 0, 0], points: [[x1, y0, 0], [x1, y1, 0], [x1, y1, z1], [x1, y0, z1]] });
+  faces.push({ color, normal: [-1, 0, 0], points: [[x0, y0, 0], [x0, y1, 0], [x0, y1, z1], [x0, y0, z1]] });
+}
+
+function buildBoard(s) {
+  cols = s.cols;
+  rows = s.rows;
+  faces = [];
+  quad(FLOOR, -0.3, -0.3, cols + 0.3, rows + 0.3, 0);
+  s.cells.forEach((cell, i) => {
+    const x = i % cols, y = Math.floor(i / cols);
+    if (cell === GOAL) quad(GOAL_COLOR, x + 0.1, y + 0.1, x + 0.9, y + 0.9, 0.01);
+    else if (cell === TRAP) quad(TRAP_COLOR, x + 0.1, y + 0.1, x + 0.9, y + 0.9, 0.01);
+    else if (i === s.start) quad(START_COLOR, x + 0.1, y + 0.1, x + 0.9, y + 0.9, 0.01);
+  });
+  // Flat marks first, so they are drawn before the walls and edges standing on the floor.
+  const flat = faces.length;
+  box(EDGE, -0.3, -0.3, cols + 0.3, 0, WALL_HEIGHT);
+  box(EDGE, -0.3, rows, cols + 0.3, rows + 0.3, WALL_HEIGHT);
+  box(EDGE, -0.3, 0, 0, rows, WALL_HEIGHT);
+  box(EDGE, cols, 0, cols + 0.3, rows, WALL_HEIGHT);
+  s.cells.forEach((cell, i) => {
+    const x = i % cols, y = Math.floor(i / cols);
+    if (cell === WALL) box(WALL_COLOR, x, y, x + 1, y + 1, WALL_HEIGHT);
+  });
+  faces.flat = flat;
+  shown.x = shown.y = null;
+}
+
+function animate() {
+  const width = view.clientWidth, height = view.clientHeight, ratio = window.devicePixelRatio || 1;
+  if (view.width !== Math.round(width * ratio)) {
+    view.width = Math.round(width * ratio);
+    view.height = Math.round(height * ratio);
+  }
+  g.setTransform(ratio, 0, 0, ratio, 0, 0);
+  g.fillStyle = "#1c2128";
+  g.fillRect(0, 0, width, height);
+  const degrees = value => Math.asin(Math.max(-1, Math.min(1, value))) / DEG;
+  shown.right += (degrees(target.right) - shown.right) * 0.3;
+  shown.down += (degrees(target.down) - shown.down) * 0.3;
+  if (target.ball != null) {
+    const tx = target.ball % cols + 0.5, ty = Math.floor(target.ball / cols) + 0.5;
+    if (shown.x == null) { shown.x = tx; shown.y = ty; }
+    shown.x += (tx - shown.x) * 0.25;
+    shown.y += (ty - shown.y) * 0.25;
+  }
+  if (layout) {
+    // A positive tilt lowers the maze's right or bottom edge, the way the ball will roll.
+    const a = shown.down * DEG, b = shown.right * DEG;
+    const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+    const ce = Math.cos(ELEVATION), se = Math.sin(ELEVATION);
+    const eye = [0, CAMERA_DISTANCE * ce, CAMERA_DISTANCE * se];
+    const focal = Math.min(width * 0.9 / (cols + 1), height * 0.8 / ((rows + 1) * se + 1)) * CAMERA_DISTANCE;
+    const rotate = ([x, y, z]) => {
+      const y1 = y * ca + z * sa, z1 = z * ca - y * sa;
+      return [x * cb + z1 * sb, y1, z1 * cb - x * sb];
+    };
+    const project = ([x, y, z]) => {
+      const p = rotate([x - cols / 2, y - rows / 2, z]);
+      const vy = p[1] - eye[1], vz = p[2] - eye[2];
+      const depth = -vy * ce - vz * se;
+      return [width / 2 + focal * p[0] / depth, height / 2 - focal * (-vy * se + vz * ce) / depth, depth];
+    };
+    const flat = [], standing = [];
+    faces.forEach((face, i) => {
+      const normal = rotate(face.normal);
+      const corner = rotate([face.points[0][0] - cols / 2, face.points[0][1] - rows / 2, face.points[0][2]]);
+      if (dot(normal, eye.map((v, k) => v - corner[k])) <= 0) return;
+      const screen = face.points.map(project);
+      const lit = 0.5 + 0.5 * Math.max(0, dot(normal, LIGHT));
+      const fill = `rgb(${face.color.map(v => Math.round(v * lit)).join(",")})`;
+      const depth = screen.reduce((sum, p) => sum + p[2], 0) / screen.length;
+      (i < faces.flat ? flat : standing).push({ depth, draw: () => polygon(screen, fill) });
+    });
+    if (shown.x != null) {
+      const [x, y, depth] = project([shown.x, shown.y, 0.3]);
+      standing.push({ depth, draw: () => {
+        g.fillStyle = "#f08a2c";
+        g.beginPath();
+        g.arc(x, y, focal * 0.3 / depth, 0, Math.PI * 2);
+        g.fill();
+      } });
+    }
+    // The camera is always above the floor, so floor marks first, then walls and ball far to near.
+    flat.forEach(item => item.draw());
+    standing.sort((p, q) => q.depth - p.depth).forEach(item => item.draw());
+  }
+  requestAnimationFrame(animate);
+}
+
+function polygon(screen, fill) {
+  g.beginPath();
+  screen.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+  g.closePath();
+  g.fillStyle = g.strokeStyle = fill;
+  g.fill();
+  g.stroke();
+}
+
+async function pollTilt() {
+  try {
+    const response = await fetch("/api/tilt", { cache: "no-store" });
+    const t = await response.json();
+    [target.right, target.down] = t.tilt;
+    target.ball = t.ball;
+    text("tiltText", `right ${t.tilt[0].toFixed(2)} g, down ${t.tilt[1].toFixed(2)} g`);
+  } catch (error) {
+    text("tiltText", "no tilt data");
+  }
+  setTimeout(pollTilt, 30);
+}
+
+setInterval(refresh, 250);
+refresh();
+pollTilt();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

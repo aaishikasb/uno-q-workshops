@@ -1,0 +1,4 @@
+name: UNO Q AI Maze
+description: Race a Q-learning agent through a tilt maze using Modulino Movement, Knob, Buttons, Pixels, and Vibro, with a live WebUI dashboard.
+bricks:
+  - arduino:web_ui: {}
