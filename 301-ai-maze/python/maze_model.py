@@ -19,6 +19,10 @@ GAMMA = 0.9
 EPSILON = 0.2
 MAX_STEPS = 60
 WALL_RATIO = 0.3
+# Every board starts on the same maze and agent seed, so training plays out identically on every
+# board and matches the facilitator's screen. pick_demo_maze.py chose these.
+DEMO_MAZE_SEED = 240
+DEMO_AGENT_SEED = 1
 
 
 def slide_path(cells, pos, action):
@@ -89,6 +93,44 @@ def generate(seed, traps=0, min_moves=4, attempts=5000):
             maze["optimal"] = moves
             return maze
     raise ValueError("Could not generate a solvable maze; lower min_moves or traps")
+
+
+def move_goal(maze, min_moves=4, max_moves=8):
+    """The demo twist: move the exit to the open cell farthest from the old one, still min..max moves away."""
+    old = maze["goal"]
+    best = None
+    for index, cell in enumerate(maze["cells"]):
+        if cell != EMPTY or index == maze["start"]:
+            continue
+        cells = list(maze["cells"])
+        cells[old] = EMPTY
+        cells[index] = GOAL
+        candidate = {**maze, "cells": cells, "goal": index}
+        moves = optimal_moves(candidate)
+        if moves is None or not min_moves <= moves <= max_moves:
+            continue
+        distance = abs(index // COLS - old // COLS) + abs(index % COLS - old % COLS)
+        if best is None or distance > best[0]:
+            best = (distance, candidate, moves)
+    if best is None:
+        return None
+    best[1]["optimal"] = best[2]
+    return best[1]
+
+
+def arrows(q):
+    """Per cell: the best action (0-3) once it is worth something, -1 if visited but no idea yet, -2 if never visited.
+
+    Every move costs 1 point, so a best value above 0 means the agent has learned a way to the exit from there.
+    """
+    result = []
+    for values in q:
+        best = max(values)
+        if best > 0:
+            result.append(values.index(best))
+        else:
+            result.append(-1 if any(values) else -2)
+    return result
 
 
 def new_q():

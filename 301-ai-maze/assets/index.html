@@ -10,118 +10,80 @@
   .row { display: flex; flex-wrap: wrap; gap: 16px; }
   .card { background: #1c2128; border-radius: 10px; padding: 12px; flex: 1 1 320px; }
   .card h2 { font-size: 0.95rem; margin: 0 0 8px; color: #9aa4b2; font-weight: 600; }
-  canvas { width: 100%; height: auto; display: block; }
+  canvas { width: 100%; display: block; }
   .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; background: #2d6cdf; font-weight: 600; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 8px 0 16px; }
+  #caption { background: #22303f; border-left: 6px solid #3a8ae0; border-radius: 8px; padding: 14px 16px;
+             font-size: 1.35rem; line-height: 1.4; margin: 8px 0 12px; min-height: 2.8em; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 0 0 16px; }
   .stat { background: #1c2128; border-radius: 8px; padding: 8px; }
-  .stat b { display: block; font-size: 1.3rem; }
+  .stat b { display: block; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
   .stat span { color: #9aa4b2; font-size: 0.8rem; }
-  table { width: 100%; border-collapse: collapse; font-size: 1.1rem; }
-  td { padding: 6px 4px; border-bottom: 1px solid #2a313a; }
-  td:last-child { text-align: right; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 1.2rem; }
+  td { padding: 8px 4px; border-bottom: 1px solid #2a313a; }
+  td:last-child { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   #status { color: #9aa4b2; font-size: 0.85rem; }
   .wide { flex-basis: 100%; }
-  canvas.view { height: 400px; border-radius: 8px; }
+  .chart-card { flex: 2 1 480px; }
+  canvas.view { height: 420px; border-radius: 8px; }
+  canvas.chart { height: 300px; }
+  .legend { color: #9aa4b2; font-size: 0.85rem; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .legend i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .key-arrow { width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 12px solid #ffd54a; }
+  .key-dot { width: 6px; height: 6px; border-radius: 50%; background: #8fa3ad; }
+  .key-trail { width: 12px; height: 12px; border-radius: 3px; background: #f08a2c; opacity: 0.6; }
+  .key-escape { width: 10px; height: 10px; border-radius: 50%; background: #3a8ae0; }
+  .key-fail { color: #d0604a; font-style: normal; font-weight: 700; }
+  .key-best { width: 18px; border-top: 2px dashed #9aa4b2; }
+  .key-moved { width: 2px; height: 14px; background: #c9a227; }
+  #hover { color: #e8eaed; font-size: 0.85rem; min-height: 1.2em; margin-top: 4px; font-variant-numeric: tabular-nums; }
   #tiltText { color: #9aa4b2; font-size: 0.85rem; font-weight: 400; font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
-<h1>AI Maze &nbsp;<span class="badge" id="mode">connecting</span></h1>
-<div id="status">Waiting for the board...</div>
+<h1>AI Maze <span id="mazeName"></span> &nbsp;<span class="badge" id="mode">connecting</span></h1>
+<div id="caption">Waiting for the board...</div>
 <div class="stats">
-  <div class="stat"><b id="episodes">0</b><span>episodes</span></div>
-  <div class="stat"><b id="rate">0%</b><span>success (last 20)</span></div>
-  <div class="stat"><b id="eps">0.20</b><span>epsilon</span></div>
-  <div class="stat"><b id="speed">0</b><span>speed</span></div>
-  <div class="stat"><b id="knob">speed</b><span>knob controls</span></div>
+  <div class="stat"><b id="episodes">0</b><span>attempts</span></div>
+  <div class="stat"><b id="rate">0%</b><span>escaped (last 20)</span></div>
+  <div class="stat"><b id="speed">0</b><span>speed (knob)</span></div>
 </div>
 <div class="row">
   <div class="card wide">
     <h2>Live board: tilts with the Modulino Movement &nbsp;<span id="tiltText"></span></h2>
     <canvas class="view" id="view"></canvas>
+    <div class="legend">
+      <span><i class="key-arrow"></i>the move it has learned leads to the exit (brighter = surer)</span>
+      <span><i class="key-dot"></i>been here, no idea yet</span>
+      <span><i class="key-trail"></i>its last moves</span>
+    </div>
   </div>
-  <div class="card">
-    <h2>What the agent thinks each cell is worth (best Q-value)</h2>
-    <canvas id="heatmap" width="520" height="320"></canvas>
-  </div>
-  <div class="card">
-    <h2>Reward per episode (last 200)</h2>
-    <canvas id="chart" width="520" height="320"></canvas>
+  <div class="card chart-card">
+    <h2>Moves per attempt: fewer is better</h2>
+    <canvas class="chart" id="chart"></canvas>
+    <div class="legend">
+      <span><i class="key-escape"></i>escaped</span>
+      <span><i class="key-fail">&times;</i>gave up after the move limit</span>
+      <span><i class="key-best"></i>best possible</span>
+      <span><i class="key-moved"></i>exit moved</span>
+    </div>
+    <div id="hover"></div>
   </div>
   <div class="card">
     <h2>Human vs AI</h2>
     <table>
-      <tr><td>Human moves</td><td id="human">-</td></tr>
-      <tr><td>Human time</td><td id="humanTime">-</td></tr>
+      <tr><td>Your moves</td><td id="human">-</td></tr>
+      <tr><td>Your time</td><td id="humanTime">-</td></tr>
       <tr><td>AI moves</td><td id="ai">-</td></tr>
       <tr><td>Best possible</td><td id="optimal">-</td></tr>
     </table>
+    <div id="status"></div>
   </div>
 </div>
 <script>
 const WALL = 1, GOAL = 2, TRAP = 3;
-const heat = document.getElementById("heatmap").getContext("2d");
-const chart = document.getElementById("chart").getContext("2d");
-
-function color(t) {
-  const r = Math.round(30 + 225 * t), g = Math.round(60 + 160 * t), b = Math.round(160 - 120 * t);
-  return `rgb(${r},${g},${b})`;
-}
-
-function drawHeatmap(s) {
-  const w = heat.canvas.width, h = heat.canvas.height, size = Math.min(w / s.cols, h / s.rows);
-  heat.clearRect(0, 0, w, h);
-  const open = s.values.filter((_, i) => s.cells[i] !== WALL);
-  const lo = Math.min(...open, 0), hi = Math.max(...open, 0.0001);
-  s.cells.forEach((cell, i) => {
-    const x = (i % s.cols) * size, y = Math.floor(i / s.cols) * size;
-    heat.fillStyle = cell === WALL ? "#4a4f57" : color((s.values[i] - lo) / (hi - lo || 1));
-    heat.fillRect(x + 1, y + 1, size - 2, size - 2);
-    if (cell === GOAL || cell === TRAP || i === s.start) {
-      heat.fillStyle = "#000";
-      heat.font = `bold ${size * 0.5}px system-ui`;
-      heat.textAlign = "center";
-      heat.textBaseline = "middle";
-      heat.fillText(cell === GOAL ? "G" :cell === TRAP ? "X" : "S", x + size / 2, y + size / 2);
-    }
-    if (i === s.ball) {
-      heat.strokeStyle = "#fff";
-      heat.lineWidth = 3;
-      heat.beginPath();
-      heat.arc(x + size / 2, y + size / 2, size * 0.36, 0, Math.PI * 2);
-      heat.stroke();
-    }
-  });
-}
-
-function drawChart(rewards) {
-  const w = chart.canvas.width, h = chart.canvas.height, pad = 28;
-  chart.clearRect(0, 0, w, h);
-  chart.strokeStyle = "#2a313a";
-  chart.strokeRect(pad, 4, w - pad - 4, h - pad - 4);
-  if (rewards.length < 2) return;
-  const lo = Math.min(...rewards), hi = Math.max(...rewards, lo + 1);
-  const y = v => 4 + (h - pad - 4) * (1 - (v - lo) / (hi - lo));
-  const x = i => pad + (w - pad - 4) * i / (rewards.length - 1);
-  chart.fillStyle = "#9aa4b2";
-  chart.font = "11px system-ui";
-  chart.fillText(hi.toFixed(0), 2, 14);
-  chart.fillText(lo.toFixed(0), 2, h - pad);
-  chart.strokeStyle = "#5b6b80";
-  chart.lineWidth = 1;
-  chart.beginPath();
-  rewards.forEach((v, i) => i ? chart.lineTo(x(i), y(v)) : chart.moveTo(x(i), y(v)));
-  chart.stroke();
-  chart.strokeStyle = "#f6c343";
-  chart.lineWidth = 2.5;
-  chart.beginPath();
-  rewards.forEach((_, i) => {
-    const window = rewards.slice(Math.max(0, i - 19), i + 1);
-    const avg = window.reduce((a, b) => a + b, 0) / window.length;
-    i ? chart.lineTo(x(i), y(avg)) : chart.moveTo(x(i), y(avg));
-  });
-  chart.stroke();
-}
+const MODE_NAMES = { human: "your turn", training: "AI learning", paused: "paused", demo: "race" };
+const ESCAPE = "#3a8ae0", FAIL = "#d0604a", MUTED = "#9aa4b2", GRID = "#2a313a", MOVED = "#c9a227";
+let latest = null;
 
 function text(id, value) { document.getElementById(id).textContent = value; }
 
@@ -129,13 +91,14 @@ async function refresh() {
   try {
     const response = await fetch("/api/state", { cache: "no-store" });
     const s = await response.json();
-    text("mode", s.mode);
-    text("status", "Live from the board. Yellow line = 20-episode average.");
+    latest = s;
+    text("mode", MODE_NAMES[s.mode] || s.mode);
+    text("mazeName", s.maze_number ? "#" + s.maze_number : "");
+    text("caption", s.caption);
+    text("status", "");
     text("episodes", s.episodes);
     text("rate", Math.round(s.success_rate * 100) + "%");
-    text("eps", s.epsilon.toFixed(2));
     text("speed", s.speed);
-    text("knob", s.knob_target);
     text("human", s.human_moves ?? "-");
     text("humanTime", s.human_seconds != null ? s.human_seconds + " s" : "-");
     text("ai", s.ai_moves ?? "-");
@@ -143,13 +106,120 @@ async function refresh() {
     if (s.cells.length) {
       const key = s.cells.join("") + ":" + s.start;
       if (key !== layout) { layout = key; buildBoard(s); }
-      drawHeatmap(s);
+      knowledge.arrows = s.arrows;
+      knowledge.strength = s.strength;
     }
-    drawChart(s.rewards);
+    drawChart();
   } catch (error) {
     text("status", "Board not reachable: " + error.message);
   }
 }
+
+// Chart: one dot per attempt at its move count, so the dots dropping onto the dashed line is "it learned".
+const chartCanvas = document.getElementById("chart");
+const chart = chartCanvas.getContext("2d");
+const PAD = { left: 34, right: 10, top: 18, bottom: 26 };
+let chartPoints = [];
+
+function drawChart() {
+  const width = chartCanvas.clientWidth, height = chartCanvas.clientHeight, ratio = window.devicePixelRatio || 1;
+  if (chartCanvas.width !== Math.round(width * ratio) || chartCanvas.height !== Math.round(height * ratio)) {
+    chartCanvas.width = Math.round(width * ratio);
+    chartCanvas.height = Math.round(height * ratio);
+  }
+  chart.setTransform(ratio, 0, 0, ratio, 0, 0);
+  chart.clearRect(0, 0, width, height);
+  chartPoints = [];
+  if (!latest) return;
+  const attempts = latest.attempts, first = latest.first_attempt, top = latest.max_moves;
+  const span = Math.max(attempts.length, 20);
+  const plotW = width - PAD.left - PAD.right, plotH = height - PAD.top - PAD.bottom;
+  const x = i => PAD.left + plotW * (i + 0.5) / span;
+  const y = v => PAD.top + plotH * (1 - v / top);
+  chart.font = "11px system-ui";
+  chart.lineWidth = 1;
+  chart.strokeStyle = GRID;
+  chart.fillStyle = MUTED;
+  chart.textAlign = "right";
+  chart.textBaseline = "middle";
+  for (let v = 0; v <= top; v += 20) {
+    chart.beginPath();
+    chart.moveTo(PAD.left, y(v));
+    chart.lineTo(width - PAD.right, y(v));
+    chart.stroke();
+    chart.fillText(v, PAD.left - 6, y(v));
+  }
+  chart.textAlign = "center";
+  chart.textBaseline = "top";
+  const step = Math.max(1, Math.ceil(span / 10 / 5) * 5);
+  for (let n = Math.ceil(first / step) * step; n < first + span; n += step) {
+    if (n >= first) chart.fillText(n, x(n - first), height - PAD.bottom + 6);
+  }
+  chart.textAlign = "left";
+  chart.fillText("attempt", PAD.left, height - 12);
+  if (!attempts.length) return;
+  // The exit moving, as a labelled line where it happened.
+  if (latest.moved_at != null && latest.moved_at >= first - 1) {
+    const mx = PAD.left + plotW * (latest.moved_at - first + 1) / span;
+    chart.strokeStyle = MOVED;
+    chart.lineWidth = 2;
+    chart.beginPath();
+    chart.moveTo(mx, PAD.top);
+    chart.lineTo(mx, height - PAD.bottom);
+    chart.stroke();
+    chart.fillStyle = "#e8eaed";
+    chart.textBaseline = "bottom";
+    chart.fillText("exit moved", mx + 4, PAD.top - 2);
+  }
+  // Best possible, dashed; it can change when the exit moves.
+  chart.strokeStyle = MUTED;
+  chart.lineWidth = 2;
+  chart.setLineDash([6, 5]);
+  chart.beginPath();
+  attempts.forEach(([, , , optimal], i) => {
+    const left = PAD.left + plotW * i / span, right = PAD.left + plotW * (i + 1) / span;
+    if (i === 0 || optimal !== attempts[i - 1][3]) chart.moveTo(left, y(optimal));
+    chart.lineTo(right, y(optimal));
+  });
+  chart.stroke();
+  chart.setLineDash([]);
+  const radius = Math.max(4, Math.min(6, plotW / span / 2.5));
+  attempts.forEach(([moves, escaped], i) => {
+    const px = x(i);
+    if (escaped) {
+      const py = y(moves);
+      chart.fillStyle = ESCAPE;
+      chart.strokeStyle = "#1c2128";
+      chart.lineWidth = 2;
+      chart.beginPath();
+      chart.arc(px, py, radius, 0, Math.PI * 2);
+      chart.fill();
+      chart.stroke();
+      chartPoints.push({ x: px, y: py, label: `Attempt ${first + i}: escaped in ${moves} moves` });
+    } else {
+      const py = y(top), r = radius * 0.8;
+      chart.strokeStyle = FAIL;
+      chart.lineWidth = 2;
+      chart.beginPath();
+      chart.moveTo(px - r, py - r); chart.lineTo(px + r, py + r);
+      chart.moveTo(px + r, py - r); chart.lineTo(px - r, py + r);
+      chart.stroke();
+      chartPoints.push({ x: px, y: py, label: `Attempt ${first + i}: gave up after ${moves} moves` });
+    }
+  });
+}
+
+chartCanvas.addEventListener("mousemove", event => {
+  const box = chartCanvas.getBoundingClientRect(), mx = event.clientX - box.left, my = event.clientY - box.top;
+  let best = null, bestDistance = 14;
+  chartPoints.forEach(point => {
+    const distance = Math.hypot(point.x - mx, point.y - my);
+    if (distance < bestDistance) { best = point; bestDistance = distance; }
+  });
+  text("hover", best ? best.label : "");
+});
+chartCanvas.addEventListener("mouseleave", () => text("hover", ""));
+window.addEventListener("resize", drawChart);
 
 // 3D board: a tiny flat-shaded polygon renderer on a 2D canvas, so it works offline on any phone.
 const DEG = Math.PI / 180;
@@ -159,14 +229,21 @@ const WALL_HEIGHT = 0.6;
 const LIGHT = normalize([-0.4, -0.5, 0.8]);
 const FLOOR = [70, 110, 122], WALL_COLOR = [150, 170, 185], EDGE = [90, 110, 125];
 const GOAL_COLOR = [60, 200, 100], TRAP_COLOR = [190, 40, 40], START_COLOR = [100, 140, 152];
+const ARROW_COLOR = [255, 213, 74], UNKNOWN_COLOR = [143, 163, 173], TRAIL_COLOR = [240, 138, 44];
+// Up, right, down, left on the floor, where y grows toward the bottom of the maze.
+const DIRECTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+// An arrow pointing along +forward, in cell units around the cell's centre: [forward, side].
+const ARROW_SHAPE = [[0.34, 0], [0.04, 0.24], [0.04, 0.09], [-0.3, 0.09], [-0.3, -0.09], [0.04, -0.09], [0.04, -0.24]];
 const view = document.getElementById("view");
 const g = view.getContext("2d");
-let layout = "", cols = 13, rows = 8, faces = [];
-const target = { right: 0, down: 0, ball: null };
+let layout = "", cols = 13, rows = 8, faces = [], cellsShown = [];
+const target = { right: 0, down: 0, ball: null, trail: [] };
 const shown = { right: 0, down: 0, x: null, y: null };
+const knowledge = { arrows: [], strength: [] };
 
 function normalize(v) { const l = Math.hypot(...v); return v.map(c => c / l); }
 function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function mix(a, b, t) { return a.map((v, k) => Math.round(v + (b[k] - v) * t)); }
 
 function quad(color, x0, y0, x1, y1, z) {
   faces.push({ color, normal: [0, 0, 1], points: [[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]] });
@@ -183,6 +260,7 @@ function box(color, x0, y0, x1, y1, z1) {
 function buildBoard(s) {
   cols = s.cols;
   rows = s.rows;
+  cellsShown = s.cells;
   faces = [];
   quad(FLOOR, -0.3, -0.3, cols + 0.3, rows + 0.3, 0);
   s.cells.forEach((cell, i) => {
@@ -203,6 +281,33 @@ function buildBoard(s) {
   });
   faces.flat = flat;
   shown.x = shown.y = null;
+}
+
+// Floor overlays that change while it learns: the trail, then an arrow or dot per open cell.
+function overlays() {
+  const marks = [];
+  const trail = target.trail;
+  trail.forEach((cell, k) => {
+    const x = cell % cols, y = Math.floor(cell / cols), t = (k + 1) / trail.length;
+    const inset = 0.32 - 0.14 * t;
+    marks.push({ color: mix(FLOOR, TRAIL_COLOR, 0.25 + 0.6 * t),
+                 points: [[x + inset, y + inset], [x + 1 - inset, y + inset], [x + 1 - inset, y + 1 - inset], [x + inset, y + 1 - inset]] });
+  });
+  knowledge.arrows.forEach((best, i) => {
+    const cell = cellsShown[i];
+    if (cell === WALL || cell === GOAL || cell === TRAP || best === -2) return;
+    const cx = i % cols + 0.5, cy = Math.floor(i / cols) + 0.5;
+    if (best === -1) {
+      marks.push({ color: mix(FLOOR, UNKNOWN_COLOR, 0.7),
+                   points: [[cx - 0.06, cy - 0.06], [cx + 0.06, cy - 0.06], [cx + 0.06, cy + 0.06], [cx - 0.06, cy + 0.06]] });
+      return;
+    }
+    const [fx, fy] = DIRECTIONS[best], sx = -fy, sy = fx;
+    const strength = knowledge.strength[i] ?? 0;
+    marks.push({ color: mix(FLOOR, ARROW_COLOR, 0.35 + 0.65 * strength),
+                 points: ARROW_SHAPE.map(([f, side]) => [cx + f * fx + side * sx, cy + f * fy + side * sy]) });
+  });
+  return marks;
 }
 
 function animate() {
@@ -240,6 +345,7 @@ function animate() {
       const depth = -vy * ce - vz * se;
       return [width / 2 + focal * p[0] / depth, height / 2 - focal * (-vy * se + vz * ce) / depth, depth];
     };
+    const floorLit = 0.5 + 0.5 * Math.max(0, dot(rotate([0, 0, 1]), LIGHT));
     const flat = [], standing = [];
     faces.forEach((face, i) => {
       const normal = rotate(face.normal);
@@ -250,6 +356,11 @@ function animate() {
       const fill = `rgb(${face.color.map(v => Math.round(v * lit)).join(",")})`;
       const depth = screen.reduce((sum, p) => sum + p[2], 0) / screen.length;
       (i < faces.flat ? flat : standing).push({ depth, draw: () => polygon(screen, fill) });
+    });
+    overlays().forEach(mark => {
+      const screen = mark.points.map(([x, y]) => project([x, y, 0.02]));
+      const fill = `rgb(${mark.color.map(v => Math.round(v * floorLit)).join(",")})`;
+      flat.push({ draw: () => polygon(screen, fill) });
     });
     if (shown.x != null) {
       const [x, y, depth] = project([shown.x, shown.y, 0.3]);
@@ -282,6 +393,7 @@ async function pollTilt() {
     const t = await response.json();
     [target.right, target.down] = t.tilt;
     target.ball = t.ball;
+    target.trail = t.trail || [];
     text("tiltText", `right ${t.tilt[0].toFixed(2)} g, down ${t.tilt[1].toFixed(2)} g`);
   } catch (error) {
     text("tiltText", "no tilt data");
