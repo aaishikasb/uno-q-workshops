@@ -115,7 +115,7 @@ async function refresh() {
   }
 }
 
-// Chart: one dot per attempt at its move count, so the dots dropping onto the dashed line is "it learned".
+// Chart: one dot per attempt at its move count.
 const chartCanvas = document.getElementById("chart");
 const chart = chartCanvas.getContext("2d");
 const PAD = { left: 34, right: 10, top: 18, bottom: 26 };
@@ -158,7 +158,7 @@ function drawChart() {
   chart.textAlign = "left";
   chart.fillText("attempt", PAD.left, height - 12);
   if (!attempts.length) return;
-  // The exit moving, as a labelled line where it happened.
+  // Where the exit moved.
   if (latest.moved_at != null && latest.moved_at >= first - 1) {
     const mx = PAD.left + plotW * (latest.moved_at - first + 1) / span;
     chart.strokeStyle = MOVED;
@@ -171,7 +171,7 @@ function drawChart() {
     chart.textBaseline = "bottom";
     chart.fillText("exit moved", mx + 4, PAD.top - 2);
   }
-  // Best possible, dashed; it can change when the exit moves.
+  // Best possible, dashed.
   chart.strokeStyle = MUTED;
   chart.lineWidth = 2;
   chart.setLineDash([6, 5]);
@@ -221,7 +221,7 @@ chartCanvas.addEventListener("mousemove", event => {
 chartCanvas.addEventListener("mouseleave", () => text("hover", ""));
 window.addEventListener("resize", drawChart);
 
-// 3D board: a tiny flat-shaded polygon renderer on a 2D canvas, so it works offline on any phone.
+// 3D board: flat-shaded polygons on a 2D canvas.
 const DEG = Math.PI / 180;
 const ELEVATION = 56 * DEG;
 const CAMERA_DISTANCE = 24;
@@ -232,7 +232,7 @@ const GOAL_COLOR = [60, 200, 100], TRAP_COLOR = [190, 40, 40], START_COLOR = [10
 const ARROW_COLOR = [255, 213, 74], UNKNOWN_COLOR = [143, 163, 173], TRAIL_COLOR = [240, 138, 44];
 // Up, right, down, left on the floor, where y grows toward the bottom of the maze.
 const DIRECTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-// An arrow pointing along +forward, in cell units around the cell's centre: [forward, side].
+// Arrow outline in cell units around the cell centre: [forward, side].
 const ARROW_SHAPE = [[0.34, 0], [0.04, 0.24], [0.04, 0.09], [-0.3, 0.09], [-0.3, -0.09], [0.04, -0.09], [0.04, -0.24]];
 const view = document.getElementById("view");
 const g = view.getContext("2d");
@@ -269,7 +269,7 @@ function buildBoard(s) {
     else if (cell === TRAP) quad(TRAP_COLOR, x + 0.1, y + 0.1, x + 0.9, y + 0.9, 0.01);
     else if (i === s.start) quad(START_COLOR, x + 0.1, y + 0.1, x + 0.9, y + 0.9, 0.01);
   });
-  // Flat marks first, so they are drawn before the walls and edges standing on the floor.
+  // Flat marks first, under the walls.
   const flat = faces.length;
   box(EDGE, -0.3, -0.3, cols + 0.3, 0, WALL_HEIGHT);
   box(EDGE, -0.3, rows, cols + 0.3, rows + 0.3, WALL_HEIGHT);
@@ -283,7 +283,7 @@ function buildBoard(s) {
   shown.x = shown.y = null;
 }
 
-// Floor overlays that change while it learns: the trail, then an arrow or dot per open cell.
+// Floor overlays: the trail, then an arrow or dot per open cell.
 function overlays() {
   const marks = [];
   const trail = target.trail;
@@ -329,7 +329,7 @@ function animate() {
     shown.y += (ty - shown.y) * 0.25;
   }
   if (layout) {
-    // A positive tilt lowers the maze's right or bottom edge, the way the ball will roll.
+    // A positive tilt lowers the right or bottom edge.
     const a = shown.down * DEG, b = shown.right * DEG;
     const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
     const ce = Math.cos(ELEVATION), se = Math.sin(ELEVATION);
@@ -371,7 +371,7 @@ function animate() {
         g.fill();
       } });
     }
-    // The camera is always above the floor, so floor marks first, then walls and ball far to near.
+    // Floor marks first, then walls and ball far to near.
     flat.forEach(item => item.draw());
     standing.sort((p, q) => q.depth - p.depth).forEach(item => item.draw());
   }

@@ -41,6 +41,9 @@ bool hasButtons = false;
 // loop() owns the I2C bus and caches readings; the read_* handlers only return the cache.
 volatile int tiltPacked = TILT_OFFSET * 4096 + TILT_OFFSET;
 volatile int knobValue = 0;
+int16_t knobRaw = 0;
+const int KNOB_GLITCH = 3;
+const int KNOB_MAX_STEP = 40;
 volatile int knobPressed = 0;
 volatile int buttonMask = 0;
 
@@ -52,9 +55,20 @@ void sampleTilt() {
   tiltPacked = (x + TILT_OFFSET) * 4096 + (y + TILT_OFFSET);
 }
 
+// Track the knob by the change between reads. knob.set() can invert the value on some firmware,
+// and knob.get() returns 0 when an I2C read fails.
+void sampleKnob() {
+  int16_t raw = knob.get();
+  int16_t delta = (int16_t)(raw - knobRaw);
+  if (raw == 0 && abs(delta) > KNOB_GLITCH) return;  // Failed read.
+  knobRaw = raw;
+  if (abs(delta) > KNOB_MAX_STEP) return;  // Resync after a large jump.
+  knobValue = constrain(knobValue + delta, 0, 100);
+}
+
 void sampleInputs() {
   if (hasKnob) {
-    knobValue = knob.get();
+    sampleKnob();
     knobPressed = knob.isPressed() ? 1 : 0;
   }
   if (hasButtons) {
@@ -84,9 +98,7 @@ int read_buttons() {
 }
 
 void set_knob(int value) {
-  value = constrain(value, 0, 100);
-  if (hasKnob) knob.set(value);
-  knobValue = value;
+  knobValue = constrain(value, 0, 100);
 }
 
 void set_row(int row, int mask) {
@@ -129,7 +141,6 @@ void pulse(int duration) {
   vibro.on(constrain(duration, 20, 600));
 }
 
-// Only this function touches the LED matrix API, so it is the one place to adapt.
 void render(uint32_t now) {
   bool goalOn = (now / 500) % 2 == 0;
   bool trapOn = (now / 150) % 2 == 0;
@@ -152,8 +163,7 @@ void report(const char* name, bool found) {
 
 void setup() {
   Serial.begin(115200);
-  // Register the Bridge methods first, so Linux can reach them while the Modulinos are still starting.
-  // Handlers check the has* flags, so they are safe to call before the modules are found.
+  // Register the Bridge methods before starting the Modulinos so Linux can connect early.
   Bridge.begin();
   Bridge.provide("read_tilt", read_tilt);
   Bridge.provide("read_knob", read_knob);
@@ -169,6 +179,7 @@ void setup() {
   Modulino.begin();
   hasMovement = movement.begin();
   hasKnob = knob.begin();
+  if (hasKnob) knobRaw = knob.get();
   hasButtons = buttons.begin();
   report("Movement", hasMovement);
   report("Knob", hasKnob);
@@ -180,7 +191,7 @@ void setup() {
   pulse(120);
 }
 
-// Matches the on-board modulino-check app: all Modulino reads happen here, never inside a Bridge handler.
+// All Modulino reads happen here, never inside a Bridge handler.
 void loop() {
   uint32_t now = millis();
   if (uint32_t(now - lastTiltAt) >= TILT_SAMPLE_MS) {

@@ -42,8 +42,7 @@ FLIP_DOWN = False
 
 BLUE, PINK, GREEN, PURPLE, WHITE, AMBER, RED, OFF = range(8)
 
-# The agent's random choices come from `rng`, reseeded for every maze, so every board trains
-# Maze #1 identically. New mazes from Button A come from `maze_rng`.
+# `rng` drives the agent and is reseeded per maze; `maze_rng` picks new mazes.
 rng = random.Random()
 maze_rng = random.Random()
 initialized = False
@@ -146,7 +145,7 @@ def new_maze():
 
 
 def wait_for_ai():
-    """Hold the AI round until Button B, so a whole room can start training together."""
+    """Hold the AI round until Button B."""
     global mode
     mode = "paused"
     place_ball(maze["start"])
@@ -158,7 +157,7 @@ def start_training():
     episode = None
     trail.clear()
     place_ball(maze["start"])
-    print("AI'S TURN: it has no map. Every move costs 1 point and the exit is worth 10. Watch it learn.")
+    print("AI'S TURN: it has no map. Every move costs 1 point and the exit is worth 10.")
     print("Knob = speed, Button B = pause, Button C = race, knob press = move the exit.")
 
 
@@ -174,7 +173,7 @@ def start_demo():
 
 
 def move_exit():
-    """The twist: the exit moves but the agent keeps what it learned, so its old arrows are now wrong."""
+    """Move the exit and keep the Q-table."""
     global maze, mode, episode, learned_at, moved_at, ai_moves
     moved = move_goal(maze, q, rng)
     if moved is None:
@@ -190,7 +189,7 @@ def move_exit():
     mode = "training"
     place_ball(maze["start"])
     Bridge.call("pulse", 300)
-    print(f"THE EXIT MOVED. Best possible is now {maze['optimal']} moves. Its old arrows lead to the old exit.")
+    print(f"THE EXIT MOVED. Best possible is now {maze['optimal']} moves.")
 
 
 def finish_episode(result):
@@ -203,12 +202,12 @@ def finish_episode(result):
     if result["success"] and not agent_found_goal:
         agent_found_goal = True
         Bridge.call("pulse", 150)
-        print(f"Attempt {episodes}: it found the exit by luck. Now it knows the last move.")
+        print(f"Attempt {episodes}: first escape.")
     if learned_at is None and best == maze["optimal"]:
         learned_at = episodes
         Bridge.call("pulse", 250)
         since = f" {episodes - moved_at} attempts after the exit moved" if moved_at is not None else ""
-        print(f"Attempt {episodes}: it found the best route ({best} moves){since}. Nobody told it.")
+        print(f"Attempt {episodes}: it found the best route ({best} moves){since}.")
 
 
 def handle_buttons():
@@ -300,8 +299,6 @@ def human_tick(now):
         if not rolling:
             finish_roll(now)
         return
-    # No need to level the board between moves: a stopped ball already rests against a
-    # wall in the direction it last rolled, so a held tilt only rolls when there is room.
     if tilt_action is None:
         return
     path, roll_outcome = slide_path(maze["cells"], ball, tilt_action)
@@ -314,7 +311,7 @@ def human_tick(now):
 
 def train_tick(now):
     global episode, next_step_at
-    # Both branches draw the same random numbers, so the knob changes the pace but never what it learns.
+    # Both branches use rng identically, so speed does not change what is learned.
     if speed <= STEP_MODE_UP_TO:
         if now < next_step_at:
             return
@@ -375,7 +372,6 @@ def update_pixels():
 
 
 def caption():
-    """One plain sentence about what is happening now, for anyone who missed what the facilitator said."""
     if maze is None:
         return "Starting..."
     if mode == "human":
@@ -436,7 +432,7 @@ def live():
 def loop():
     global initialized, next_control_at
     if not initialized:
-        # Right after flashing, the MCU can time out or reply "method not available" until setup() finishes.
+        # The MCU may not answer until setup() finishes.
         try:
             Bridge.call("set_knob", speed)
         except Exception as error:
@@ -458,7 +454,6 @@ def loop():
         update_pixels()
     if mode == "human":
         human_tick(now)
-    # Shorter than the usual 0.05 s so the tilt and the 3D board follow the hand closely.
     time.sleep(TILT_POLL_SECONDS)
 
 

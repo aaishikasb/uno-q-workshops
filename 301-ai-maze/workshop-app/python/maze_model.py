@@ -19,8 +19,7 @@ GAMMA = 0.9
 EPSILON = 0.2
 MAX_STEPS = 60
 WALL_RATIO = 0.3
-# Every board starts on the same maze and agent seed, so training plays out identically on every
-# board and matches the facilitator's screen. pick_demo_maze.py chose these.
+# Fixed seeds so every board trains Maze #1 identically.
 DEMO_MAZE_SEED = 240
 DEMO_AGENT_SEED = 1
 
@@ -95,8 +94,7 @@ def generate(seed, traps=0, min_moves=4, attempts=5000):
     raise ValueError("Could not generate a solvable maze; lower min_moves or traps")
 
 
-# The twist should be re-learned in a watchable time: a few failed attempts, then the new route.
-# In total moves after the knob press; at the default speed of about 0.2 s per move, 25 to 70 s.
+# Target re-learning time after the exit moves, in agent moves (25-70 s at the default speed).
 RELEARN_MOVES = (120, 360)
 
 
@@ -115,11 +113,10 @@ def relearn_moves(maze, q, rng_state, limit):
 
 
 def move_goal(maze, q=None, rng=None, min_moves=4, max_moves=8, window=RELEARN_MOVES):
-    """The demo twist: move the exit to another open cell min..max moves from the start.
+    """Move the exit to an open cell min_moves..max_moves from the start.
 
-    Training is deterministic, so with the agent's q and rng this replays what would happen for each
-    candidate and picks the exit it will re-learn closest to the middle of `window` moves; it does not
-    change what the agent knows or will do. Without them, or if none fits, it picks the farthest cell.
+    With q and rng, replays training for each candidate and picks the one re-learned closest to the
+    middle of `window`. Otherwise picks the cell farthest from the old exit.
     """
     old = maze["goal"]
     candidates = []
@@ -146,7 +143,6 @@ def move_goal(maze, q=None, rng=None, min_moves=4, max_moves=8, window=RELEARN_M
             moves = relearn_moves(candidate, q, state, 2 * high)
             if moves is None:
                 continue
-            # Inside the window, nearest its middle wins; otherwise nearest the window.
             score = abs(moves - (low + high) / 2) if low <= moves <= high else high + max(low - moves, moves - high)
             if best is None or score < best[0]:
                 best = (score, candidate)
@@ -156,10 +152,7 @@ def move_goal(maze, q=None, rng=None, min_moves=4, max_moves=8, window=RELEARN_M
 
 
 def arrows(q):
-    """Per cell: the best action (0-3) once it is worth something, -1 if visited but no idea yet, -2 if never visited.
-
-    Every move costs 1 point, so a best value above 0 means the agent has learned a way to the exit from there.
-    """
+    """Per cell: best action (0-3) if its value is above 0, -1 if visited, -2 if never visited."""
     result = []
     for values in q:
         best = max(values)
