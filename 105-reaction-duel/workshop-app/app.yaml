@@ -1,0 +1,4 @@
+name: UNO Q Reaction Duel
+description: Two-player reflex duel on Modulino Buttons, with Pixels and Vibro cues timed on the MCU and a WebUI leaderboard.
+bricks:
+  - arduino:web_ui: {}

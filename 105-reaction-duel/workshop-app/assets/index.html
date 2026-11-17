@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UNO Q Reaction Duel</title>
+<style>
+  :root { --p1: #28c850; --p2: #0078dc; --bg: #101418; --card: #1b2128; --text: #e8eef2; --muted: #8a96a3; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  main { max-width: 720px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+  h1 { margin: 0; font-size: 1.4rem; }
+  .card { background: var(--card); border-radius: 12px; padding: 16px; }
+  .score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; text-align: center; }
+  .score .num { font-size: 4rem; font-weight: 700; }
+  .p1 { color: var(--p1); } .p2 { color: var(--p2); }
+  #status { font-size: 1.2rem; text-align: center; min-height: 1.5em; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { padding: 6px 4px; text-align: left; border-bottom: 1px solid #2a323b; }
+  th { color: var(--muted); font-weight: 500; }
+  .muted { color: var(--muted); }
+  #offline { display: none; color: #e6a000; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Reaction Duel <span class="muted" id="match"></span></h1>
+  <div id="offline" class="card">Waiting for the board...</div>
+  <div class="card score">
+    <div><div class="p1">Player 1 (A)</div><div class="num p1" id="s1">0</div></div>
+    <div class="muted">first to 3</div>
+    <div><div class="p2">Player 2 (C)</div><div class="num p2" id="s2">0</div></div>
+  </div>
+  <div class="card" id="status"></div>
+  <div class="card">
+    <h2>This match</h2>
+    <table><thead><tr><th>Round</th><th>Cue</th><th>Result</th></tr></thead><tbody id="rounds"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>Fastest reactions</h2>
+    <table><thead><tr><th>#</th><th>Player</th><th>Time</th><th>Match</th></tr></thead><tbody id="board"></tbody></table>
+  </div>
+</main>
+<script>
+const STATUS = {
+  idle: "Press B to start the next round",
+  armed: "Wait for it...",
+  result: "",
+  match_over: "Match over! Press B for a new match",
+};
+
+function playerClass(index) { return index === 0 ? "p1" : "p2"; }
+
+function describe(row, players) {
+  if (row.winner === null) return '<span class="muted">No press</span>';
+  if (row.false_start !== null) {
+    return `<span class="${playerClass(row.false_start)}">${players[row.false_start]}</span> false start`;
+  }
+  return `<span class="${playerClass(row.winner)}">${players[row.winner]}</span> in ${row.reaction_ms} ms`;
+}
+
+function render(s) {
+  document.getElementById("match").textContent = `match ${s.match}`;
+  document.getElementById("s1").textContent = s.score[0];
+  document.getElementById("s2").textContent = s.score[1];
+  const last = s.rounds.filter(r => r.match === s.match).slice(-1)[0];
+  document.getElementById("status").innerHTML =
+    s.mode === "result" && last ? describe(last, s.players) : STATUS[s.mode] || s.mode;
+  document.getElementById("rounds").innerHTML = s.rounds
+    .filter(r => r.match === s.match)
+    .map(r => `<tr><td>${r.round}</td><td>${r.cue}</td><td>${describe(r, s.players)}</td></tr>`)
+    .join("");
+  document.getElementById("board").innerHTML = s.leaderboard
+    .map((r, i) => `<tr><td>${i + 1}</td><td class="${r.player === s.players[0] ? "p1" : "p2"}">${r.player}</td>` +
+                   `<td>${r.reaction_ms} ms</td><td>${r.match}</td></tr>`)
+    .join("");
+}
+
+async function refresh() {
+  try {
+    const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) throw new Error(response.status);
+    render(await response.json());
+    document.getElementById("offline").style.display = "none";
+  } catch (error) {
+    document.getElementById("offline").style.display = "block";
+  }
+}
+
+refresh();
+setInterval(refresh, 500);
+</script>
+</body>
+</html>
