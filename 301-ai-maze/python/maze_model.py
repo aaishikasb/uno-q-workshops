@@ -95,10 +95,34 @@ def generate(seed, traps=0, min_moves=4, attempts=5000):
     raise ValueError("Could not generate a solvable maze; lower min_moves or traps")
 
 
-def move_goal(maze, min_moves=4, max_moves=8):
-    """The demo twist: move the exit to the open cell farthest from the old one, still min..max moves away."""
+# The twist should be re-learned in a watchable time: a few failed attempts, then the new route.
+# In total moves after the knob press; at the default speed of about 0.2 s per move, 25 to 70 s.
+RELEARN_MOVES = (120, 360)
+
+
+def relearn_moves(maze, q, rng_state, limit):
+    """Replay training ahead on copies of q and the random numbers: moves until the route is optimal, or None."""
+    rng = random.Random()
+    rng.setstate(rng_state)
+    q = [list(values) for values in q]
+    moves = 0
+    while moves <= limit:
+        moves += run_episode(q, maze, EPSILON, rng=rng)["steps"]
+        path, success = greedy_path(q, maze)
+        if success and len(path) == maze["optimal"]:
+            return moves
+    return None
+
+
+def move_goal(maze, q=None, rng=None, min_moves=4, max_moves=8, window=RELEARN_MOVES):
+    """The demo twist: move the exit to another open cell min..max moves from the start.
+
+    Training is deterministic, so with the agent's q and rng this replays what would happen for each
+    candidate and picks the exit it will re-learn closest to the middle of `window` moves; it does not
+    change what the agent knows or will do. Without them, or if none fits, it picks the farthest cell.
+    """
     old = maze["goal"]
-    best = None
+    candidates = []
     for index, cell in enumerate(maze["cells"]):
         if cell != EMPTY or index == maze["start"]:
             continue
@@ -109,13 +133,26 @@ def move_goal(maze, min_moves=4, max_moves=8):
         moves = optimal_moves(candidate)
         if moves is None or not min_moves <= moves <= max_moves:
             continue
+        candidate["optimal"] = moves
         distance = abs(index // COLS - old // COLS) + abs(index % COLS - old % COLS)
-        if best is None or distance > best[0]:
-            best = (distance, candidate, moves)
-    if best is None:
+        candidates.append((distance, candidate))
+    if not candidates:
         return None
-    best[1]["optimal"] = best[2]
-    return best[1]
+    candidates.sort(key=lambda item: -item[0])
+    if q is not None and rng is not None:
+        state, low, high = rng.getstate(), window[0], window[1]
+        best = None
+        for distance, candidate in candidates:
+            moves = relearn_moves(candidate, q, state, 2 * high)
+            if moves is None:
+                continue
+            # Inside the window, nearest its middle wins; otherwise nearest the window.
+            score = abs(moves - (low + high) / 2) if low <= moves <= high else high + max(low - moves, moves - high)
+            if best is None or score < best[0]:
+                best = (score, candidate)
+        if best is not None:
+            return best[1]
+    return candidates[0][1]
 
 
 def arrows(q):

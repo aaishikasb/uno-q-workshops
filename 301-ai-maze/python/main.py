@@ -176,7 +176,7 @@ def start_demo():
 def move_exit():
     """The twist: the exit moves but the agent keeps what it learned, so its old arrows are now wrong."""
     global maze, mode, episode, learned_at, moved_at, ai_moves
-    moved = move_goal(maze)
+    moved = move_goal(maze, q, rng)
     if moved is None:
         print("There is no good spot to move the exit to in this maze. Press Button A for a new maze.")
         return
