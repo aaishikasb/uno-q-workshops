@@ -42,7 +42,8 @@ bool hasButtons = false;
 volatile int tiltPacked = TILT_OFFSET * 4096 + TILT_OFFSET;
 volatile int knobValue = 0;
 int16_t knobRaw = 0;
-const int KNOB_GLITCH = 3;
+bool knobSynced = false;
+int knobDir = 0;
 const int KNOB_MAX_STEP = 40;
 volatile int knobPressed = 0;
 volatile int buttonMask = 0;
@@ -55,22 +56,35 @@ void sampleTilt() {
   tiltPacked = (x + TILT_OFFSET) * 4096 + (y + TILT_OFFSET);
 }
 
-// Track the knob by the change between reads. knob.set() can invert the value on some firmware,
-// and knob.get() returns 0 when an I2C read fails.
+// Track the knob by the change between reads, never by writing to it (knob.set() can invert the value
+// on some firmware). One read gives both position and press: knob.get() hides failed reads as 0, and
+// knob.isPressed() makes a second read.
 void sampleKnob() {
-  int16_t raw = knob.get();
+  uint8_t buf[3];
+  if (!knob.read(buf, 3) || buf[2] == 0xFF) return;  // Failed or short read.
+  knobPressed = buf[2] ? 1 : 0;
+  int16_t raw = (int16_t)(buf[0] | (buf[1] << 8));
+  if (!knobSynced) {
+    knobRaw = raw;
+    knobSynced = true;
+    return;
+  }
   int16_t delta = (int16_t)(raw - knobRaw);
-  if (raw == 0 && abs(delta) > KNOB_GLITCH) return;  // Failed read.
   knobRaw = raw;
-  if (abs(delta) > KNOB_MAX_STEP) return;  // Resync after a large jump.
+  if (delta == 0) {
+    knobDir = 0;
+    return;
+  }
+  int dir = delta > 0 ? 1 : -1;
+  // A fast turn can make the encoder miscount backwards, so a change of direction
+  // only counts after the knob has stopped for one read.
+  if (abs(delta) > KNOB_MAX_STEP || dir == -knobDir) return;
+  knobDir = dir;
   knobValue = constrain(knobValue + delta, 0, 100);
 }
 
 void sampleInputs() {
-  if (hasKnob) {
-    sampleKnob();
-    knobPressed = knob.isPressed() ? 1 : 0;
-  }
+  if (hasKnob) sampleKnob();
   if (hasButtons) {
     buttons.update();
     int mask = 0;
@@ -179,7 +193,6 @@ void setup() {
   Modulino.begin();
   hasMovement = movement.begin();
   hasKnob = knob.begin();
-  if (hasKnob) knobRaw = knob.get();
   hasButtons = buttons.begin();
   report("Movement", hasMovement);
   report("Knob", hasKnob);

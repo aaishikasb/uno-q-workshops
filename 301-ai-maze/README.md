@@ -143,7 +143,7 @@ flowchart LR
 ### MCU Responsibilities
 
 - Sample the Movement every 5 ms and the Knob and Buttons every 20 ms in `loop()`, and cache the readings. The `read_*` Bridge handlers only return the cache and never touch I2C, the same pattern as the board's `modulino-check` app.
-- Keep the Knob's 0–100 position on the MCU from how far it turned between reads, and never write to the Knob. `knob.set()` can invert the value on some Knob firmware, and `knob.get()` returns 0 when a read fails, so a read of 0 right after a big change is skipped.
+- Keep the Knob's 0–100 position on the MCU from how far it turned between reads, and never write to the Knob (`knob.set()` can invert the value on some Knob firmware). Each sample is one I2C read that returns both the position and the press, and failed reads are skipped. A change of direction only counts after the Knob stops, because a fast turn can miscount backwards.
 - Return the raw accelerometer X and Y in milli-g, packed into one int so both come from the same sample.
 - Print `AI Maze: <module> found` or `MISSING` for each Modulino at startup. View it with `arduino-app-cli monitor` on the board.
 - Store the maze walls, exit, traps, and ball, and redraw the LED matrix every 50 ms with the exit and traps blinking at different rates. The matrix uses 3-bit grayscale, so lit cells are drawn at 7.
@@ -228,9 +228,9 @@ Change `ROLL_FIRST_CELL_SECONDS`, `ROLL_ACCELERATION`, and `ROLL_MIN_CELL_SECOND
 
 The matrix call is isolated in `render()` in `sketch.ino`. It calls the core's `matrixBegin()` and `matrixGrayscaleWrite(frame)` directly on a 104-value frame, in 3-bit grayscale (0 to 7), so lit cells use `LIT = 7`. Don't switch to the `Arduino_LED_Matrix` class: with `ArduinoGraphics` in the build (Modulino pulls it in), the sketch fails to load, the MCU LED blinks red, and Python reports `method ... not available`.
 
-### The knob jumps back to 0
+### The knob jumps back or goes the wrong way
 
-The sketch only uses how far the Knob turned between reads, and skips a read of 0 right after a big change, because a failed I2C read returns 0. If it still jumps, check the Qwiic cable to the Knob. `AI Maze: Knob found` should print at startup.
+The sketch skips failed reads and ignores a change of direction until the Knob stops, so pause briefly before turning it back. If it still jumps, check the Qwiic cable to the Knob. `AI Maze: Knob found` should print at startup.
 
 ### The output prints "Waiting for the MCU sketch to answer"
 
