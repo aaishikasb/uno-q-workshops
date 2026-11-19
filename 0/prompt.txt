@@ -1,0 +1,51 @@
+Can you plan a 30x workshop using ExecuTorch on top of the UNO Q?
+
+---
+
+I dont want it to be focused around any of the pre-existing workshops, I want it to have an identity of its own, use the same modulinos but do its own thing, as long as it runs executorch
+
+---
+
+Sounds a little complicated, another idea?
+
+---
+
+try again
+
+---
+
+can't get a camera, with the apparatus we already have please
+
+---
+
+I like this one, flesh out the plan for 301: Beat the Board using the Knob, Pixels, and Vibro with ExecuTorch on the UNO Q.
+
+---
+
+Resume working on this please
+
+---
+
+Go ahead and implement 301: Beat the Board based on the plan, starting with the ExecuTorch runtime compatibility check.
+
+---
+
+<send_user_message_question_reply>
+[{"questionItemId":"[\"request_user_input_async\",\"call_6830061fbb1d4135b89b5716ec69b039\",0]","question":"Is a UNO Q available for testing? If so, connect it over USB or provide its SSH hostname and username. I’ll continue with the model, app, and local checks while the board compatibility test is pending.","answer":"not yet, proceed without running IRL tests, don't mention it explicitly in the README."}]
+</send_user_message_question_reply>
+
+---
+
+Can align the README to how other workshop apps are defined?
+
+---
+
+Can you add a section of ExecuTorch prework/prerequisite/knowledge base?
+
+---
+
+Can you run a final pass on the 301?
+
+---
+
+Can you remove VALIDATION and any unnecessary docs or comments that are inconsequential to a workshop attendee?

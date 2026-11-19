@@ -1,0 +1,86 @@
+{
+  "cli_version": "0.10.5",
+  "checkpoint_id": "01M7S8SHRRX5BPV43A9S28M3TW",
+  "session_id": "01a137c1-42b7-7d03-b0cb-a8a705caa24a",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-19T06:44:35.247124Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "301-beat-the-board/AGENTS.md",
+    "301-beat-the-board/README.md",
+    "301-beat-the-board/workshop-app/python/game.py",
+    "301-beat-the-board/workshop-app/python/opponent.py",
+    "README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6-astra",
+  "turn_id": "b541d15a66ab",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 984890,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 9377280,
+    "output_tokens": 59568,
+    "api_call_count": 84
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-11-19T06:44:35.169509Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 3,
+    "total_committed": 0,
+    "total_lines_changed": 3,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1427,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "301-beat-the-board/.gitignore": 4,
+        "301-beat-the-board/AGENTS.md": 8,
+        "301-beat-the-board/README.md": 310,
+        "301-beat-the-board/VALIDATION.md": 63,
+        "301-beat-the-board/package.py": 34,
+        "301-beat-the-board/test_beat_the_board.py": 149,
+        "301-beat-the-board/tests/stubs/Arduino_Modulino.h": 29,
+        "301-beat-the-board/tests/stubs/Arduino_RouterBridge.h": 7,
+        "301-beat-the-board/tests/test_sketch.cpp": 71,
+        "301-beat-the-board/training/evaluation.json": 58,
+        "301-beat-the-board/training/export.py": 63,
+        "301-beat-the-board/training/requirements.txt": 6,
+        "301-beat-the-board/training/train.py": 96,
+        "301-beat-the-board/workshop-app/app.yaml": 3,
+        "301-beat-the-board/workshop-app/python/check_runtime.py": 53,
+        "301-beat-the-board/workshop-app/python/game.py": 121,
+        "301-beat-the-board/workshop-app/python/main.py": 31,
+        "301-beat-the-board/workshop-app/python/models/fixtures.json": 1,
+        "301-beat-the-board/workshop-app/python/models/metadata.json": 24,
+        "301-beat-the-board/workshop-app/python/opponent.py": 63,
+        "301-beat-the-board/workshop-app/python/requirements.txt": 6,
+        "301-beat-the-board/workshop-app/sketch/controls.h": 41,
+        "301-beat-the-board/workshop-app/sketch/sketch.ino": 161,
+        "301-beat-the-board/workshop-app/sketch/sketch.yaml": 17,
+        "README.md": 8
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1345,
+      "agent_lines_removed": 0
+    }
+  ]
+}
