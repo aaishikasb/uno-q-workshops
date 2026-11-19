@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "input_shape": [
+    1,
+    8
+  ],
+  "input_dtype": "float32",
+  "encoding": {
+    "left": -1,
+    "right": 1
+  },
+  "labels": [
+    "left",
+    "right"
+  ],
+  "history_order": "oldest_first",
+  "delegates": [
+    "XnnpackBackend"
+  ],
+  "executorch": "1.5.1",
+  "torch": "2.14.0",
+  "sha256": "709755d2886352506ec3ea078cfa988ad1c7c6f2ac1c65d545f3692df742e0f4",
+  "parity_max_absolute_error": 4.023313522338867e-07
+}

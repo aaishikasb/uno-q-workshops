@@ -27,6 +27,14 @@ Collect examples, train local models, and use predictions to drive physical feed
 | `204: Pocket Pet` | Teach a light-and-vibration pet your preferences through rewards and exploration. | UNO Q, Modulino Knob, Pixels, and Vibro | [View content](./204-pocket-pet/) |
 | `205: Reflex Lab` | Learn personal light and vibration reaction-time baselines, then score fresh challenges. | UNO Q, Modulino Knob, Pixels, and Vibro | [View content](./205-reflex-lab/) |
 
+### `30x`: Model deployment with ExecuTorch
+
+Export PyTorch models, deploy them on the UNO Q Linux MPU with ExecuTorch, and connect predictions to physical interactions.
+
+| Workshop | Description | Hardware | Materials |
+| --- | --- | --- | --- |
+| `301: Beat the Board` | Fool an AI opponent that predicts your next left or right choice, then export and deploy its model yourself. | UNO Q, Modulino Knob, Pixels, and Vibro | [View content](./301-beat-the-board/) |
+
 ## Choose the right workshop files
 
 Each numbered folder is a separate App Lab project. The filenames repeat across workshops, so always include the workshop folder when locating a file or asking for a change.

@@ -1,0 +1,58 @@
+{
+  "repeat": {
+    "model": 1.0,
+    "repeat": 1.0,
+    "opposite": 0.0,
+    "random": 0.4978,
+    "examples": 4096
+  },
+  "alternate": {
+    "model": 1.0,
+    "repeat": 0.0,
+    "opposite": 1.0,
+    "random": 0.5063,
+    "examples": 4096
+  },
+  "pairs": {
+    "model": 1.0,
+    "repeat": 0.5,
+    "opposite": 0.5,
+    "random": 0.5078,
+    "examples": 4096
+  },
+  "biased": {
+    "model": 0.759,
+    "repeat": 0.6868,
+    "opposite": 0.3132,
+    "random": 0.4824,
+    "examples": 4096
+  },
+  "noisy": {
+    "model": 0.8105,
+    "repeat": 0.4929,
+    "opposite": 0.5071,
+    "random": 0.499,
+    "examples": 4096
+  },
+  "switch": {
+    "model": 0.9673,
+    "repeat": 0.2405,
+    "opposite": 0.7595,
+    "random": 0.4924,
+    "examples": 4096
+  },
+  "random": {
+    "model": 0.4988,
+    "repeat": 0.4976,
+    "opposite": 0.5024,
+    "random": 0.5017,
+    "examples": 4096
+  },
+  "unseen_triplets": {
+    "model": 0.4983,
+    "repeat": 0.6665,
+    "opposite": 0.3335,
+    "random": 0.4954,
+    "examples": 4096
+  }
+}
