@@ -256,7 +256,7 @@ def loop():
         elif mode == "live" and held < RETRAIN_RELEASE_BEFORE_SECONDS:
             begin_training(clear_saved_model=True)
         elif mode == "live":
-            print("Countdown cancelled; the model was kept.")
+            print("Countdown cancelled. The model was kept.")
         pressed_at = None
 
     if mode == "capturing":

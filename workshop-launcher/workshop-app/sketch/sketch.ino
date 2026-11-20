@@ -22,7 +22,7 @@ bool hasMovement = false;
 bool hasKnob = false;
 bool hasButtons = false;
 
-// ---------------------------------------------------------------- Launcher state
+// Launcher state
 
 const int APP_MENU = 0;
 const int APP_DUEL = 1;
@@ -39,7 +39,7 @@ int countdown = 0;               // 0 = no countdown, otherwise Pixels still lit
 bool holdUsed = false;           // The current press already exited (or started before the app).
 volatile int exitRequested = 0;
 
-// ---------------------------------------------------------------- Pixels
+// Pixels
 
 // Apps draw into this cache. The countdown is drawn over it without losing it, so letting go of
 // the knob early puts the app's Pixels straight back.
@@ -73,7 +73,7 @@ void pulse(int duration) {
   vibro.on(constrain(duration, 20, 600));
 }
 
-// ---------------------------------------------------------------- Knob (shared by every app)
+// Knob (shared by every app)
 
 // Track the knob by the change between reads, never by writing to it (knob.set() can invert the value
 // on some firmware). One read gives both position and press. The position is unbounded; each app
@@ -149,7 +149,7 @@ int take_exit() {
   return value;
 }
 
-// ---------------------------------------------------------------- Buttons (105 debounced events)
+// Buttons (105 debounced events)
 
 const uint32_t BUTTON_SAMPLE_MS = 5;
 const uint32_t DEBOUNCE_MS = 20;
@@ -172,7 +172,7 @@ int read_buttons() {
   return mask;
 }
 
-// ---------------------------------------------------------------- 105 Reaction Duel
+// 105 Reaction Duel
 
 // Flip if Player 1's half lights at the Button C end of your chain.
 const bool PLAYER_ONE_ON_PIXEL_ZERO = true;
@@ -348,7 +348,7 @@ void sampleButtons(uint32_t now) {
   }
 }
 
-// ---------------------------------------------------------------- 201 Gesture Dial
+// 201 Gesture Dial
 
 enum DisplayMode {
   MODE_LIVE = 0,
@@ -409,7 +409,7 @@ void pulse_feedback(int kind) {
   }
 }
 
-// ---------------------------------------------------------------- 301 AI Maze
+// 301 AI Maze
 
 const int ROWS = 8;
 const int COLS = 13;
@@ -475,7 +475,7 @@ void maze_show(int color, int count) {
   flushPixels();
 }
 
-// ---------------------------------------------------------------- LED matrix
+// LED matrix
 
 const uint32_t RENDER_MS = 50;
 // The matrix draws 3-bit grayscale, so 7 is full brightness.
@@ -490,7 +490,7 @@ const uint8_t DIGITS[3][7] = {
   {0b01110, 0b10001, 0b00001, 0b00010, 0b00100, 0b01000, 0b11111},  // 2
   {0b11111, 0b00010, 0b00100, 0b00010, 0b00001, 0b10001, 0b01110},  // 3
 };
-const int DIGIT_LEFT = 4;  // Centred on the 13 columns.
+const int DIGIT_LEFT = 4;  // Centered on the 13 columns.
 
 void drawDigit(int digit, uint8_t level) {
   for (int row = 0; row < 7; row++) {
@@ -524,7 +524,7 @@ void render(uint32_t now) {
   matrixGrayscaleWrite(frame);
 }
 
-// ---------------------------------------------------------------- Launcher Bridge calls
+// Launcher Bridge calls
 
 const uint8_t MENU_COLORS[3][3] = {{40, 200, 80}, {120, 70, 220}, {0, 120, 220}};
 
@@ -537,7 +537,7 @@ void show_menu(int choice) {
   flushPixels();
 }
 
-// 0 = menu, 1 = Reaction Duel, 2 = Gesture Dial, 3 = AI Maze. Every switch starts from a clean slate.
+// 0 = menu, 1 = Reaction Duel, 2 = Gesture Dial, 3 = AI Maze. Each switch resets the app state.
 void set_app(int app) {
   activeApp = constrain(app, APP_MENU, APP_MAZE);
   cancel_duel();
@@ -551,7 +551,7 @@ void set_app(int app) {
   flushPixels();
 }
 
-// ---------------------------------------------------------------- setup / loop
+// setup / loop
 
 void report(const char* name, bool found) {
   Serial.print("Workshop Launcher: ");

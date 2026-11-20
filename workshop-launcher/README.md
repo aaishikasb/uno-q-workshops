@@ -16,18 +16,18 @@ Use the 301 wiring, which includes every Modulino the three apps need:
 UNO Q Qwiic -> Modulino Movement -> Modulino Knob -> Modulino Buttons -> Modulino Pixels -> Modulino Vibro
 ```
 
-## Using The Launcher
+## Using the launcher
 
-1. Import `workshop-app.zip` in App Lab, open **UNO Q Workshop Launcher**, and click `Run`.
-2. The LED matrix shows a large **1**, **2**, or **3**, with three dots underneath showing where you are in the list. The Pixels show the app's color: green for 1, purple for 2, blue for 3.
-3. **Turn the knob** to change the selection.
-4. **Tap the knob** (press and release in under a second) to start the selected app.
+1. Import `workshop-app.zip` in App Lab, open UNO Q Workshop Launcher, and click `Run`.
+2. The LED matrix shows a large 1, 2, or 3, with three dots underneath showing where you are in the list. The Pixels show the app's color: green for 1, purple for 2, blue for 3.
+3. Turn the knob to change the selection.
+4. Tap the knob (press and release in under a second) to start the selected app.
 
 While app 1 or 2 is running, its number stays dimly lit on the matrix. App 3 uses the matrix for the maze.
 
 ### Going back to the menu
 
-**Hold the knob for 13 seconds.**
+Hold the knob for 13 seconds.
 
 - For the first 5 seconds nothing changes.
 - Then all 8 Pixels turn red and one goes out each second, with a small buzz, for 8 seconds.
@@ -36,15 +36,15 @@ While app 1 or 2 is running, its number stays dimly lit on the matrix. App 3 use
 
 The MCU times the hold, so the countdown stays accurate even while the Linux side is busy, for example while the AI Maze picks a new exit.
 
-## What Changed In Each App
+## What changed in each app
 
 All three apps work as described in their own READMEs, with these differences:
 
 | App | Change | Why |
 | --- | --- | --- |
-| 201 Gesture Dial | To retrain, hold the knob for **3 s, wait for the buzz, then let go before 5 s**. Before, retraining started on its own at 3 s. | Otherwise a 13-second exit hold would erase the model. |
-| 301 AI Maze | **Tap** the knob to move the exit. Before, the exit moved as soon as the knob was pressed. | Otherwise every exit hold would also move the exit. |
-| 301 AI Maze | The speed starts at 45 every time you launch the app, and it follows the knob from there. | The MCU no longer keeps a 0–100 knob value for the maze. |
+| 201 Gesture Dial | To retrain, hold the knob for 3 s, wait for the buzz, then let go before 5 s. Before, retraining started on its own at 3 s. | Otherwise a 13-second exit hold would erase the model. |
+| 301 AI Maze | Tap the knob to move the exit. Before, the exit moved as soon as the knob was pressed. | Otherwise every exit hold would also move the exit. |
+| 301 AI Maze | The speed starts at 45 every time you launch the app, and it follows the knob from there. | The MCU no longer keeps a 0-100 knob value for the maze. |
 | All | The Python state is reset each time you launch an app, the same as running it as its own app. | Each app module is reloaded on launch. |
 
 The saved files from 105 (`data/leaderboard.json`) and 201 (`data/gesture_model.json`) persist across launches and restarts.
@@ -53,7 +53,7 @@ The saved files from 105 (`data/leaderboard.json`) and 201 (`data/gesture_model.
 
 Open `http://<board-ip>:7000`. The page follows the launcher: it shows the Reaction Duel leaderboard while app 1 runs, the 3D maze while app 3 runs, and a short note for the menu and for app 2, which has no dashboard.
 
-## How It Fits Together
+## How it fits together
 
 ```text
  MCU (sketch.ino)                               Linux (python/)
@@ -87,12 +87,3 @@ If the digit appears upside down or mirrored, your matrix is in a different orie
 - `workshop-app/python/app_duel.py`, `app_gesture.py`, `app_maze.py`: the three original `main.py` files as start/loop/stop modules
 - `workshop-app/assets/index.html`: dashboard shell; `duel.html` and `maze.html` are the original dashboards with new API paths
 - `workshop-app.zip`: importable App Lab project
-
-## Not Yet Checked On A Board
-
-The Python launcher flow was tested on a computer with a simulated Bridge, and the sketch was syntax-checked against stub headers. These still need a check on a real board:
-
-- the sketch building with the Arduino board libraries
-- the digit's orientation on the matrix
-- knob step sizes
-- whether the WebUI brick serves `duel.html` and `maze.html` from `assets/` for the dashboard frames

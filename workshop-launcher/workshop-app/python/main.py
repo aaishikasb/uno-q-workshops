@@ -119,7 +119,7 @@ def app_tick():
         APPS[active][1].loop()
     except Exception:
         traceback.print_exc()
-        leave_app(f"{APPS[active][0]} stopped after an error; back to the menu.")
+        leave_app(f"{APPS[active][0]} stopped after an error. Back to the menu.")
 
 
 def loop():
@@ -156,7 +156,7 @@ def app_state(number, function):
 
 def start_web():
     if WebUI is None:
-        print("WebUI brick not available; the apps still run without the dashboards.")
+        print("WebUI brick not available. The apps still run without the dashboards.")
         return
     try:
         ui = WebUI()
@@ -165,7 +165,7 @@ def start_web():
         ui.expose_api("GET", "/api/maze/state", app_state(3, "state"))
         ui.expose_api("GET", "/api/maze/tilt", app_state(3, "live"))
     except Exception as error:
-        print(f"Dashboard unavailable ({error}); the apps still work.")
+        print(f"Dashboard unavailable ({error}). The apps still work.")
 
 
 if __name__ == "__main__":
