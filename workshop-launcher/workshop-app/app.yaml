@@ -1,0 +1,4 @@
+name: UNO Q Workshop Launcher
+description: Pick Reaction Duel, Gesture Dial, or AI Maze with the Modulino Knob; hold the knob 13 seconds to return to the menu.
+bricks:
+  - arduino:web_ui: {}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UNO Q Workshop Launcher</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111418; color: #e8eaed; font-family: system-ui, sans-serif; }
+  #message { max-width: 640px; margin: 0 auto; padding: 32px 16px; text-align: center; }
+  #message h1 { font-size: 1.4rem; margin: 0 0 16px; }
+  #message .big { font-size: 5rem; font-weight: 700; margin: 8px 0; }
+  #message p { color: #9aa4b2; line-height: 1.5; }
+  iframe { display: none; border: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="message"><h1>UNO Q Workshop Launcher</h1><p>Waiting for the board...</p></div>
+<iframe id="app" title="Running app"></iframe>
+<script>
+// Each app with a dashboard keeps its own page; this shell shows the one for the running app.
+const PAGES = { 1: "duel.html", 3: "maze.html" };
+let shown = null;
+
+function show(key, html) {
+  if (key === shown) return;
+  shown = key;
+  const frame = document.getElementById("app");
+  const message = document.getElementById("message");
+  if (PAGES[key]) {
+    frame.src = PAGES[key];
+    frame.style.display = "block";
+    message.style.display = "none";
+  } else {
+    frame.removeAttribute("src");
+    frame.style.display = "none";
+    message.style.display = "block";
+    message.innerHTML = html;
+  }
+}
+
+async function refresh() {
+  try {
+    const response = await fetch("/api/launcher", { cache: "no-store" });
+    const s = await response.json();
+    if (s.active === 0) {
+      show(`menu-${s.choice}`, `<h1>Choose an app with the knob</h1><div class="big">${s.choice}</div>` +
+        `<p>${s.apps[s.choice]}</p><p>Turn the knob to change, tap it to start.<br>` +
+        `Inside an app, hold the knob for 13 seconds to come back.</p>`);
+    } else if (!PAGES[s.active]) {
+      show(s.active, `<h1>${s.apps[s.active]}</h1><p>This app has no dashboard. Follow the App Lab output.</p>` +
+        `<p>Hold the knob for 13 seconds to go back to the menu.</p>`);
+    } else {
+      show(s.active);
+    }
+  } catch (error) {
+    show("offline", "<h1>UNO Q Workshop Launcher</h1><p>Waiting for the board...</p>");
+  }
+}
+
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>
